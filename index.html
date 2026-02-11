@@ -199,8 +199,9 @@
                 let linkCrudo = prod.IMAGEN ? String(prod.IMAGEN).split('|')[0].trim() : '';
                 let imgUrl = 'https://via.placeholder.com/500x888.png?text=Sin+Imagen';
 
-                if (linkCrudo.includes('/upload/')) {
-                    imgUrl = linkCrudo.replace('/upload/', '/upload/f_auto,q_auto,w_500,l_logo,w_100,g_south_east,x_10,y_10,o_70/');
+               if (linkCrudo.includes('/upload/')) {
+                // Optimiza calidad, peso, y recorta inteligentemente a formato 9:16
+                imgUrl = linkCrudo.replace('/upload/', '/upload/f_auto,q_auto,w_500,ar_9:16,c_fill/');
                 } else if (linkCrudo !== '') {
                     imgUrl = linkCrudo; 
                 }
