@@ -89,6 +89,13 @@
         #toast.show { opacity: 1; }
 
         @media (min-width: 768px) { .grid-container { grid-template-columns: repeat(4, 1fr); } }
+
+        /* Esto oculta los puntos de navegación */
+        .dots-container { display: none !important; }
+
+        /* Opcional: Si quieres las flechas más grandes para compensar */
+        .carousel-btn { width: 35px; height: 35px; font-size: 1.2rem; background: rgba(255,255,255,0.9); }
+        
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 </head>
@@ -257,28 +264,28 @@
             lote.forEach((grupo) => {
                 window.diccionarioVariantes[grupo.idGrupo] = grupo;
                 
-                // CARRUSEL DE IMÁGENES
-                let arrImgs = Array.from(grupo.imagenesSet);
-                if(arrImgs.length === 0) arrImgs.push(''); 
-                
-                let imgsHtml = '';
-                let dotsHtml = '';
-                arrImgs.forEach((imgCrudo, i) => {
-                    let imgFinal = procesarImagen(imgCrudo);
-                    let activeClass = i === 0 ? 'active' : '';
-                    imgsHtml += `<img src="${imgFinal}" class="product-img ${activeClass}" loading="lazy">`;
-                    if(arrImgs.length > 1) {
-                        dotsHtml += `<span class="dot ${activeClass}"></span>`;
-                    }
-                });
+            // --- CARRUSEL SINCRONIZADO CON VARIANTES ---
+            // Usamos grupo.variantes para asegurar que la Imagen 0 sea la Variante 0 (SKU 0)
+            let imgsHtml = '';
+            let navHtml = '';
+            
+            // Recorremos las variantes para crear una imagen por cada una
+            grupo.variantes.forEach((v, i) => {
+                let imgFinal = procesarImagen(v.IMAGEN || grupo.imagenPrincipal); // Si la variante no tiene foto, usa la principal
+                let activeClass = i === 0 ? 'active' : '';
+                // Guardamos el índice (i) en la imagen para saber cuál es
+                imgsHtml += `<img src="${imgFinal}" class="product-img ${activeClass}" data-idx="${i}" loading="lazy">`;
+            });
+            
+            // Solo mostramos flechas si hay más de 1 variante
+            if(grupo.variantes.length > 1) {
+                navHtml = `
+                    <button class="btn-add" onclick="agregarDesdeImagenActiva('${grupo.idGrupo}')">Agregar</button>
+                `;
+                }
 
-                let navHtml = '';
-                if(arrImgs.length > 1) {
-                    navHtml = `
-                        <button class="carousel-btn prev" onclick="cambiarImg('${grupo.idGrupo}', -1, event)">&#10094;</button>
-                        <button class="carousel-btn next" onclick="cambiarImg('${grupo.idGrupo}', 1, event)">&#10095;</button>
-                        <div class="dots-container">${dotsHtml}</div>
-                    `;
+        // Inicializamos el wrapper con data-index="0" para saber que empieza en la primera
+        let wrapperHtml = `<div class="image-wrapper" id="wrapper-${grupo.idGrupo}" data-current="0">${imgsHtml}${navHtml}</div>`;
                 }
 
                 let nombreSeguro = String(grupo.nombre).replace(/'/g, "\\'").replace(/"/g, '&quot;');
@@ -320,21 +327,25 @@
 
         // LÓGICA DEL CARRITO DE IMÁGENES
         window.cambiarImg = function(idGrupo, dir, event) {
-            if(event) event.stopPropagation(); // Evita clics no deseados
+            if(event) event.stopPropagation();
+            
             let wrapper = document.getElementById('wrapper-' + idGrupo);
             let imgs = wrapper.querySelectorAll('.product-img');
-            let dots = wrapper.querySelectorAll('.dot');
-            let activeIdx = 0;
+            let current = parseInt(wrapper.getAttribute('data-current')); // Leemos en qué imagen estamos
             
-            imgs.forEach((img, idx) => {
-                if(img.classList.contains('active')) activeIdx = idx;
-                img.classList.remove('active');
-                if(dots[idx]) dots[idx].classList.remove('active');
-            });
+            // Calculamos la nueva posición
+            let nextIdx = (current + dir + imgs.length) % imgs.length;
             
-            let nextIdx = (activeIdx + dir + imgs.length) % imgs.length;
+            // Actualizamos visualmente
+            imgs[current].classList.remove('active');
             imgs[nextIdx].classList.add('active');
-            if(dots[nextIdx]) dots[nextIdx].classList.add('active');
+            
+            // Guardamos la nueva posición en el HTML para que el botón de agregar la lea
+            wrapper.setAttribute('data-current', nextIdx);
+            
+            // OPCIONAL: Si tienes el select visible, esto hace que el select cambie solo al mover la foto
+            let selectVar = document.getElementById(`sel-${idGrupo}`);
+            if(selectVar) selectVar.value = nextIdx;
         };
 
         window.addEventListener('scroll', () => {
@@ -459,6 +470,38 @@
         }
         
         cargarCatalogo();
+
+        function agregarDesdeImagenActiva(idGrupo) {
+    let grupo = window.diccionarioVariantes[idGrupo];
+    
+    // 1. Buscamos en qué índice está el carrusel en este momento
+    let wrapper = document.getElementById('wrapper-' + idGrupo);
+    let indexActivo = parseInt(wrapper.getAttribute('data-current')) || 0;
+    
+    // 2. Sacamos exactamente esa variante
+    let varianteElegida = grupo.variantes[indexActivo];
+    
+    // 3. Agregamos al carrito esa referencia exacta
+    let idUnico = varianteElegida.SKU || `${idGrupo}-${indexActivo}`;
+    let nombreFull = varianteElegida.VARIABLE !== 'Única' ? `${grupo.nombre} - ${varianteElegida.VARIABLE}` : grupo.nombre;
+    let imagen = procesarImagen(varianteElegida.IMAGEN || grupo.imagenPrincipal);
+
+    if (carrito[idUnico]) { 
+        carrito[idUnico].cantidad += 1; 
+    } else { 
+        carrito[idUnico] = { 
+            id: idUnico, 
+            nombre: nombreFull, 
+            variableInfo: varianteElegida.VARIABLE, 
+            precio: varianteElegida.PRECIO, 
+            imagen: imagen, 
+            cantidad: 1 
+        }; 
+    }
+    
+    actualizarUI_Carrito();
+    mostrarToast();
+}
     </script>
 </body>
 </html>
