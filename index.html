@@ -7,7 +7,7 @@
     <style>
         /* Estilo Reset y Variables */
         :root {
-            --primary: #ff4e00; /* Color estilo Temu/Shopee */
+            --primary: #ff4e00; /* Color estilo Temu/Shopee - Naranja vibrante */
             --bg-color: #f5f5f5;
             --text-main: #333;
         }
@@ -15,7 +15,7 @@
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
         body { background-color: var(--bg-color); color: var(--text-main); padding-bottom: 20px; }
 
-        /* --- CABECERA STICKY --- */
+        /* --- CABECERA STICKY (Logo Grande) --- */
         header {
             background: white;
             padding: 10px 15px;
@@ -27,12 +27,18 @@
             align-items: center;
             box-shadow: 0 2px 5px rgba(0,0,0,0.05);
         }
-        .logo { height: 40px; width: auto; object-fit: contain; }
+        /* CAMBIO AQUÍ: Logo mucho más grande y notorio */
+        .logo { 
+            height: 80px; /* Altura aumentada para destacar la marca */
+            width: auto; 
+            max-width: 70%; /* Evita que empuje al carrito en pantallas muy pequeñas */
+            object-fit: contain; 
+        }
         
         .cart-icon {
             position: relative;
             cursor: pointer;
-            font-size: 1.5rem;
+            font-size: 1.8rem; /* Icono de carrito ligeramente más grande para equilibrar */
             padding: 5px;
         }
         .cart-badge {
@@ -43,7 +49,7 @@
             color: white;
             border-radius: 50%;
             padding: 2px 6px;
-            font-size: 0.7rem;
+            font-size: 0.75rem;
             font-weight: bold;
         }
 
@@ -56,13 +62,14 @@
         }
         .search-bar {
             width: 100%;
-            padding: 10px;
+            padding: 12px;
             border: 1px solid #ddd;
-            border-radius: 20px;
-            font-size: 0.95rem;
+            border-radius: 25px; /* Más redondeado estilo app moderna */
+            font-size: 1rem;
             outline: none;
+            background-color: #f9f9f9;
         }
-        .search-bar:focus { border-color: var(--primary); }
+        .search-bar:focus { border-color: var(--primary); background-color: white; }
 
         /* --- GRILLA TEMU --- */
         .grid-container {
@@ -83,7 +90,7 @@
             flex-direction: column;
         }
 
-        /* Imagen 9:16 (Sin opacidad para evitar el bug de scroll) */
+        /* Imagen 9:16 */
         .image-wrapper {
             position: relative;
             width: 100%;
@@ -94,7 +101,7 @@
             position: absolute;
             top: 0; left: 0;
             width: 100%; height: 100%;
-            object-fit: contain; /* Contain evita que se corten los bordes de tus productos */
+            object-fit: contain; 
         }
 
         .info { padding: 8px; display: flex; flex-direction: column; flex-grow: 1; }
@@ -103,7 +110,7 @@
         
         .btn-add {
             margin-top: auto;
-            background: #111;
+            background: #111; /* Botón negro para contraste premium */
             color: white;
             border: none;
             padding: 8px;
@@ -173,7 +180,7 @@
     </div>
 
     <div id="app" class="grid-container">
-        <div id="loader">Cargando ofertas...</div>
+        <div id="loader">Cargando catálogo...</div>
     </div>
 
     <div id="cart-modal">
@@ -189,7 +196,7 @@
                     <span>Total:</span>
                     <span id="cart-total-price">$0</span>
                 </div>
-                <button class="btn-whatsapp" onclick="enviarPedido()">Hacer Pedido por WhatsApp</button>
+                <button class="btn-whatsapp" onclick="enviarPedido()">Finalizar Pedido en WhatsApp</button>
             </div>
         </div>
     </div>
@@ -200,7 +207,7 @@
         // --- CONFIGURACIÓN ---
         const CLOUD_NAME = 'ddbfb3e3n'; 
         const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw2wOoteFwD6INS_eRTjbcZanVthNuqpbKgss08e2dG8hWHdlW1ukcHiV-p3B8vtb_U/exec'; 
-        const NUMERO_WHATSAPP = '573114957971'; // Ya configurado con tu número
+        const NUMERO_WHATSAPP = '573114957971'; // Tu número configurado
 
         let productosGlobales = [];
         let carrito = {};
@@ -229,13 +236,13 @@
             container.innerHTML = ''; 
 
             if (lista.length === 0) {
-                container.innerHTML = '<p style="text-align:center; grid-column:1/-1; padding:20px;">No se encontraron productos.</p>';
+                container.innerHTML = '<p style="text-align:center; grid-column:1/-1; padding:20px; color:#666;">No se encontraron productos.</p>';
                 return;
             }
 
             lista.forEach((prod, index) => {
-                // Si no hay Cloudinary_ID, asignamos un ID temporal basado en el índice para poder agregarlo al carrito
                 const idProducto = prod.SKU || `PROD-${index}`;
+                // Optimizamos la imagen para web: formato automático y calidad automática
                 const imgUrl = prod.Cloudinary_ID 
                     ? `https://res.cloudinary.com/${CLOUD_NAME}/image/upload/f_auto,q_auto,w_500/${prod.Cloudinary_ID}`
                     : 'https://via.placeholder.com/500x888.png?text=Sin+Imagen';
@@ -249,7 +256,7 @@
                     <div class="info">
                         <div class="price">${formatoMoneda(prod.Precio_COP)}</div>
                         <div class="name">${prod.Nombre}</div>
-                        <button class="btn-add" onclick="agregarAlCarrito('${idProducto}', '${prod.Nombre.replace(/'/g, "\\'")}', ${prod.Precio_COP}, '${imgUrl}')">Agregar al carrito</button>
+                        <button class="btn-add" onclick="agregarAlCarrito('${idProducto}', '${prod.Nombre.replace(/'/g, "\\'")}', ${prod.Precio_COP}, '${imgUrl}')">Agregar</button>
                     </div>
                 `;
                 container.appendChild(card);
@@ -322,17 +329,16 @@
         function enviarPedido() {
             if (Object.keys(carrito).length === 0) return alert("Agrega al menos un producto para hacer el pedido.");
 
-            let mensaje = "¡Hola! 👋 Quiero realizar este pedido:\n\n";
+            let mensaje = "¡Hola Forwarder Venture! 👋 Quiero realizar este pedido:\n\n";
             let total = 0;
 
             Object.values(carrito).forEach(item => {
                 const subtotal = item.precio * item.cantidad;
                 total += subtotal;
-                mensaje += `🛒 *${item.cantidad}x* ${item.nombre}\n`;
-                mensaje += `   └ Subtotal: ${formatoMoneda(subtotal)}\n\n`;
+                mensaje += `▪️ *${item.cantidad}x* ${item.nombre}\n`;
             });
 
-            mensaje += `🧾 *TOTAL A PAGAR: ${formatoMoneda(total)}*`;
+            mensaje += `\n🧾 *TOTAL A PAGAR: ${formatoMoneda(total)}*`;
             
             const url = `https://wa.me/${NUMERO_WHATSAPP}?text=${encodeURIComponent(mensaje)}`;
             window.open(url, '_blank');
@@ -348,6 +354,9 @@
             toast.classList.add('show');
             setTimeout(() => toast.classList.remove('show'), 2000);
         }
+        
+        // Iniciar la carga
+        cargarCatalogo();
     </script>
 </body>
 </html>
