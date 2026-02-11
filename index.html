@@ -14,7 +14,6 @@
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
         body { background-color: var(--bg-color); color: var(--text-main); padding-bottom: 20px; }
 
-        /* --- CABECERA --- */
         header {
             background: white; padding: 10px 15px; position: sticky; top: 0; z-index: 100;
             display: flex; justify-content: space-between; align-items: center;
@@ -28,7 +27,6 @@
             border-radius: 50%; padding: 2px 6px; font-size: 0.75rem; font-weight: bold;
         }
 
-        /* --- FILTROS --- */
         .controls-wrapper { background: white; padding: 10px 15px; margin-bottom: 5px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
         .search-bar { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 25px; font-size: 1rem; outline: none; background-color: #f9f9f9; margin-bottom: 10px; }
         .search-bar:focus { border-color: var(--primary); background-color: white; }
@@ -36,23 +34,17 @@
         .filters-container { display: flex; gap: 10px; }
         .filter-select { flex: 1; padding: 10px; border-radius: 20px; border: 1px solid #ddd; font-size: 0.9rem; outline: none; background-color: #f9f9f9; cursor: pointer; }
 
-        /* --- GRILLA --- */
         .grid-container { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; padding: 8px; max-width: 1000px; margin: 0 auto; }
 
         .product-card { background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1); display: flex; flex-direction: column; position: relative; }
         
-        /* --- IMÁGENES CUADRADAS 1:1 Y CARRUSEL --- */
         .image-wrapper { 
-            position: relative; 
-            width: 100%; 
-            padding-top: 100%; 
-            background-color: #fff; 
-            overflow: hidden;
+            position: relative; width: 100%; padding-top: 100%; 
+            background-color: #fff; overflow: hidden;
         }
         .product-img { 
             position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
-            object-fit: contain; 
-            opacity: 0; transition: opacity 0.3s; z-index: 1; 
+            object-fit: contain; opacity: 0; transition: opacity 0.3s; z-index: 1; 
             background: white;
         }
         .product-img.active { opacity: 1; z-index: 2; }
@@ -67,9 +59,6 @@
         .carousel-btn.prev { left: 5px; }
         .carousel-btn.next { right: 5px; }
         
-        .dots-container { display: none !important; }
-
-        /* --- INFO PRODUCTO --- */
         .info { padding: 8px; display: flex; flex-direction: column; flex-grow: 1; }
         .price { color: var(--primary); font-weight: 800; font-size: 1.15rem; }
         .price-desde { font-size: 0.75rem; color: #777; font-weight: normal; margin-right: 3px; }
@@ -79,7 +68,6 @@
         .btn-add { margin-top: auto; background: #111; color: white; border: none; padding: 8px; border-radius: 20px; font-size: 0.85rem; font-weight: bold; cursor: pointer; width: 100%; }
         .btn-add:active { background: var(--primary); transform: scale(0.98); }
 
-        /* --- CARRITO --- */
         #cart-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1000; display: none; justify-content: flex-end; }
         .cart-content { background: white; width: 85%; max-width: 400px; height: 100%; display: flex; flex-direction: column; animation: slideIn 0.3s forwards; }
         @keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
@@ -93,7 +81,6 @@
         .cart-item-info { flex-grow: 1; }
         .cart-item-title { font-size: 0.8rem; font-weight: bold; margin-bottom: 4px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;}
         .cart-item-price { color: var(--primary); font-size: 0.9rem; font-weight: bold; }
-        .cart-item-variant { font-size: 0.7rem; color: #666; background: #f0f0f0; padding: 2px 5px; border-radius: 3px; display: inline-block; margin-bottom: 3px; }
         
         .qty-controls { display: flex; align-items: center; gap: 12px; margin-top: 5px; }
         .qty-btn { background: #f0f0f0; border: none; width: 28px; height: 28px; border-radius: 50%; font-weight: bold; font-size: 1.1rem; cursor: pointer; }
@@ -173,25 +160,19 @@
                     let tiposUnicos = new Set();
                     
                     dataRaw.forEach((p, index) => {
-                        let nombre = ''; let precioCosto = 0; let precioVenta = 0;
-                        let variable = 'Única'; let tipo = 'Otros'; let sku = ''; let imagen = '';
-                        let parentSku = '';
-                        
-                        for (let key in p) {
-                            let k = String(key).toUpperCase().trim();
-                            if (k === 'PRECIO') precioCosto = Number(String(p[key]).replace(/[^\d]/g, ""));
-                            else if (k === 'PRECIO DE VENTA') precioVenta = Number(String(p[key]).replace(/[^\d]/g, ""));
-                            else if (k === 'NOMBRE') nombre = String(p[key]).trim();
-                            else if (k === 'VARIABLE') variable = String(p[key]).trim() || 'Única';
-                            else if (k === 'TIPO') tipo = String(p[key]).trim() || 'Otros';
-                            else if (k === 'IMAGEN') imagen = String(p[key]).trim();
-                            else if (k === 'SKU') sku = String(p[key]).trim();
-                            else if (k === 'SKU PADRE' || k === 'PARENT SKU') parentSku = String(p[key]).trim();
-                        }
-                        
-                        let precioFinal = precioVenta > 0 ? precioVenta : precioCosto;
-                        if (!nombre || precioFinal <= 0) return; 
-                        
+                        // Mapeo exacto a tus nuevas columnas
+                        let sku = p['SKU']?.trim() || '';
+                        let parentSku = p['PARENT SKU']?.trim() || '';
+                        let nombre = p['NOMBRE']?.trim() || '';
+                        let precioVenta = Number(String(p['PRECIO DE VENTA'] || 0).replace(/[^\d]/g, ""));
+                        let imagen = p['IMAGEN']?.trim() || '';
+                        let tipo = p['TIPO']?.trim() || 'Otros';
+                        let variable = p['VARIABLE']?.trim() || 'Única';
+                        let proveedor = p['PROVEEDOR']?.trim() || 'Desconocido';
+
+                        if (!nombre || precioVenta <= 0) return; 
+
+                        // Clave de agrupación: PARENT SKU para consolidar repetidos
                         let keyGrupo = parentSku || sku || nombre.toLowerCase();
 
                         if (!mapGrupos[keyGrupo]) {
@@ -199,33 +180,31 @@
                                 idGrupo: "GRP-" + Math.random().toString(36).substr(2, 9),
                                 nombre: nombre,
                                 tipo: tipo,
-                                precioMinimo: precioFinal,
+                                precioMinimo: precioVenta,
                                 originalIndex: index, 
                                 variantes: []
                             };
                         }
 
+                        // Lógica de repetidos: Si el mismo producto llega con menor precio, actualizamos el mínimo
+                        if (precioVenta < mapGrupos[keyGrupo].precioMinimo) {
+                            mapGrupos[keyGrupo].precioMinimo = precioVenta;
+                        }
+
                         mapGrupos[keyGrupo].variantes.push({ 
+                            SKU: sku,
                             NOMBRE: nombre, 
-                            PRECIO: precioFinal, 
+                            PRECIO: precioVenta, 
                             VARIABLE: variable, 
-                            SKU: sku, 
-                            IMAGEN: imagen 
+                            IMAGEN: imagen,
+                            PROVEEDOR: proveedor
                         });
 
-                        if (precioFinal < mapGrupos[keyGrupo].precioMinimo) {
-                            mapGrupos[keyGrupo].precioMinimo = precioFinal;
-                        }
                         if(tipo !== 'Otros') tiposUnicos.add(tipo);
                     });
 
                     productosAgrupados = Object.values(mapGrupos);
                     
-                    if (productosAgrupados.length === 0) {
-                        document.getElementById('loader').innerHTML = `<div style="color:#c62828; padding:20px;">Catálogo vacío. Revisa las columnas del Excel.</div>`;
-                        return;
-                    }
-
                     let selectTipo = document.getElementById('filterTipo');
                     Array.from(tiposUnicos).sort().forEach(t => {
                         if(t) selectTipo.innerHTML += `<option value="${t}">${t}</option>`;
@@ -233,7 +212,6 @@
 
                     productosAgrupados.sort((a, b) => b.originalIndex - a.originalIndex);
                     productosFiltrados = [...productosAgrupados];
-                    
                     renderizarSiguienteLote();
                 }
             });
@@ -243,20 +221,16 @@
 
         function procesarImagen(linkCrudo) {
             if (!linkCrudo) return 'https://via.placeholder.com/500x500.png?text=Sin+Imagen';
+            // Mantiene el procesamiento de Cloudinary si existe
             if (linkCrudo.includes('/upload/')) {
                 return linkCrudo.replace('/upload/', '/upload/f_auto,q_auto,w_500,ar_1:1,c_pad,b_white/');
             }
             return linkCrudo;
         }
+
         function renderizarSiguienteLote() {
             const container = document.getElementById('app');
-            if (itemsRenderizados === 0) {
-                container.innerHTML = ''; 
-                if (productosFiltrados.length === 0) {
-                    container.innerHTML = '<p style="text-align:center; grid-column:1/-1; padding:20px; color:#666;">No se encontraron productos.</p>';
-                    return;
-                }
-            }
+            if (itemsRenderizados === 0) container.innerHTML = ''; 
 
             const lote = productosFiltrados.slice(itemsRenderizados, itemsRenderizados + ITEMS_POR_PAGINA);
 
@@ -268,9 +242,8 @@
                 let contadorTotalImgs = 0;
 
                 grupo.variantes.forEach((v) => {
-                    // SEPARA POR | CADA LINK DE LA CELDA
                     let links = v.IMAGEN.split('|').map(s => s.trim()).filter(s => s !== "");
-                    if(links.length === 0) links = [null]; // Placeholder si está vacía
+                    if(links.length === 0) links = [null];
 
                     links.forEach((l) => {
                         let imgFinal = procesarImagen(l);
@@ -281,19 +254,11 @@
                 });
 
                 if(contadorTotalImgs > 1) {
-                    navHtml = `
-                        <button class="carousel-btn prev" onclick="cambiarImg('${grupo.idGrupo}', -1, event)">&#10094;</button>
-                        <button class="carousel-btn next" onclick="cambiarImg('${grupo.idGrupo}', 1, event)">&#10095;</button>
-                    `;
+                    navHtml = `<button class="carousel-btn prev" onclick="cambiarImg('${grupo.idGrupo}', -1, event)">&#10094;</button>
+                               <button class="carousel-btn next" onclick="cambiarImg('${grupo.idGrupo}', 1, event)">&#10095;</button>`;
                 }
 
-                let textoVariableInicial = grupo.variantes.length > 1 ? grupo.variantes[0].VARIABLE : '';
-                let htmlTag = textoVariableInicial && textoVariableInicial !== 'Única' 
-                    ? `<div class="variant-tag" id="tag-${grupo.idGrupo}">${textoVariableInicial}</div>` 
-                    : '';
-
-                let preciosUnicos = new Set(grupo.variantes.map(v => v.PRECIO));
-                let uiPrecio = preciosUnicos.size > 1 
+                let uiPrecio = grupo.variantes.length > 1 && new Set(grupo.variantes.map(v => v.PRECIO)).size > 1
                     ? `<span class="price-desde">Desde</span>${formatoMoneda(grupo.precioMinimo)}` 
                     : formatoMoneda(grupo.precioMinimo);
 
@@ -307,7 +272,6 @@
                     <div class="info">
                         <div class="price" id="price-${grupo.idGrupo}">${uiPrecio}</div>
                         <div class="name">${grupo.nombre}</div>
-                        ${htmlTag}
                         <button class="btn-add" onclick="agregarDesdeImagenActiva('${grupo.idGrupo}')">Agregar</button>
                     </div>
                 `;
@@ -319,27 +283,14 @@
 
         window.cambiarImg = function(idGrupo, dir, event) {
             if(event) event.stopPropagation();
-            
             let wrapper = document.getElementById('wrapper-' + idGrupo);
             let imgs = wrapper.querySelectorAll('.product-img');
             let current = parseInt(wrapper.getAttribute('data-current')) || 0;
-            
             let nextIdx = (current + dir + imgs.length) % imgs.length;
-            
             imgs[current].classList.remove('active');
             imgs[nextIdx].classList.add('active');
-            
             wrapper.setAttribute('data-current', nextIdx);
-            
-            // Actualización de precio si el usuario está viendo una variante específica
-            // (Opcional: puedes dejar el precio "Desde" o cambiarlo al de la variante)
         };
-
-        window.addEventListener('scroll', () => {
-            if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 600) {
-                if (itemsRenderizados < productosFiltrados.length) { renderizarSiguienteLote(); }
-            }
-        });
 
         function aplicarFiltros() {
             let texto = document.getElementById('searchInput').value.toLowerCase();
@@ -347,18 +298,14 @@
             let sortDir = document.getElementById('sortPrecio').value;
 
             productosFiltrados = productosAgrupados.filter(g => {
-                let coincideTexto = g.nombre.toLowerCase().includes(texto) || g.variantes.some(v => v.SKU && String(v.SKU).toLowerCase().includes(texto));
+                let coincideTexto = g.nombre.toLowerCase().includes(texto) || g.variantes.some(v => v.SKU.toLowerCase().includes(texto));
                 let coincideTipo = tipoSel === "" || g.tipo === tipoSel;
                 return coincideTexto && coincideTipo;
             });
             
-            if (sortDir === 'recent') {
-                productosFiltrados.sort((a, b) => b.originalIndex - a.originalIndex);
-            } else if (sortDir === 'asc') {
-                productosFiltrados.sort((a, b) => a.precioMinimo - b.precioMinimo);
-            } else if (sortDir === 'desc') {
-                productosFiltrados.sort((a, b) => b.precioMinimo - a.precioMinimo);
-            }
+            if (sortDir === 'asc') productosFiltrados.sort((a, b) => a.precioMinimo - b.precioMinimo);
+            else if (sortDir === 'desc') productosFiltrados.sort((a, b) => b.precioMinimo - a.precioMinimo);
+            else productosFiltrados.sort((a, b) => b.originalIndex - a.originalIndex);
 
             itemsRenderizados = 0;
             renderizarSiguienteLote();
@@ -370,8 +317,6 @@
             let indexActivo = parseInt(wrapper.getAttribute('data-current')) || 0;
             let todasLasImgs = wrapper.querySelectorAll('.product-img');
             
-            // Si hay variantes, intentamos asociar la imagen al SKU correcto
-            // Por simplicidad, tomamos la primera variante o la que coincida con el nombre
             let varianteElegida = grupo.variantes[0]; 
             let idUnico = varianteElegida.SKU || `${idGrupo}`;
             
@@ -381,12 +326,11 @@
                 carrito[idUnico] = { 
                     id: idUnico, 
                     nombre: grupo.nombre, 
-                    precio: varianteElegida.PRECIO, 
+                    precio: grupo.precioMinimo, 
                     imagen: todasLasImgs[indexActivo].src, 
                     cantidad: 1 
                 }; 
             }
-            
             actualizarUI_Carrito();
             mostrarToast();
         }
@@ -403,13 +347,11 @@
             const container = document.getElementById('cart-items-container');
             const totalElem = document.getElementById('cart-total-price');
             const badge = document.getElementById('cart-count');
-            
             container.innerHTML = ''; let total = 0; let cantidadItems = 0;
 
             Object.values(carrito).forEach(item => {
-                let subtotal = item.precio * item.cantidad;
-                total += subtotal; cantidadItems += item.cantidad;
-                
+                total += item.precio * item.cantidad;
+                cantidadItems += item.cantidad;
                 container.innerHTML += `
                     <div class="cart-item">
                         <img src="${item.imagen}" alt="img">
@@ -422,27 +364,19 @@
                                 <button class="qty-btn" onclick="cambiarCantidad('${item.id}', 1)">+</button>
                             </div>
                         </div>
-                    </div>
-                `;
+                    </div>`;
             });
 
             totalElem.textContent = formatoMoneda(total);
             badge.textContent = cantidadItems;
-            if (cantidadItems === 0) { container.innerHTML = '<p style="text-align:center; margin-top:30px; color:#888;">Tu carrito está vacío</p>'; }
         }
 
         function enviarPedido() {
-            if (Object.keys(carrito).length === 0) return alert("Agrega al menos un producto para hacer el pedido.");
-            let mensaje = "¡Hola Forwarder Venture! 👋 Quiero realizar este pedido:\n\n";
-            let total = 0;
-
+            if (Object.keys(carrito).length === 0) return;
+            let mensaje = "¡Hola Forwarder Venture! 👋 Pedido:\n\n";
             Object.values(carrito).forEach(item => {
-                let subtotal = item.precio * item.cantidad;
-                total += subtotal;
-                mensaje += `▪️ *${item.cantidad}x* ${item.nombre} (ID: ${item.id})\n`;
+                mensaje += `▪️ *${item.cantidad}x* ${item.nombre} (SKU: ${item.id})\n`;
             });
-
-            mensaje += `\n🧾 *TOTAL A PAGAR: ${formatoMoneda(total)}*`;
             window.open(`https://wa.me/${NUMERO_WHATSAPP}?text=${encodeURIComponent(mensaje)}`, '_blank');
         }
 
