@@ -45,19 +45,18 @@
         .image-wrapper { 
             position: relative; 
             width: 100%; 
-            padding-top: 100%; /* ESTO LO HACE CUADRADO */
+            padding-top: 100%; 
             background-color: #fff; 
             overflow: hidden;
         }
         .product-img { 
             position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
-            object-fit: contain; /* Ajusta la imagen sin cortarla */
+            object-fit: contain; 
             opacity: 0; transition: opacity 0.3s; z-index: 1; 
             background: white;
         }
         .product-img.active { opacity: 1; z-index: 2; }
         
-        /* Flechas del carrusel */
         .carousel-btn { 
             position: absolute; top: 50%; transform: translateY(-50%); 
             background: rgba(255,255,255,0.9); border: none; width: 30px; height: 30px; 
@@ -68,7 +67,6 @@
         .carousel-btn.prev { left: 5px; }
         .carousel-btn.next { right: 5px; }
         
-        /* Ocultar los puntos */
         .dots-container { display: none !important; }
 
         /* --- INFO PRODUCTO --- */
@@ -153,9 +151,6 @@
     <div id="toast">Agregado al carrito</div>
 
     <script>
-        // -------------------------------------------------------------
-        // 👇 PEGA AQUÍ TU ENLACE CSV DE GOOGLE SHEETS 👇
-        // -------------------------------------------------------------
         const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ3XO-nqSQGQ6YdoAj7Nn5H-cyiWYb2Mw1ICSpkqYXP5JbZT7eXG4fb7S7JamNH2BbJCv8ZZrMnvcG1/pub?gid=0&single=true&output=csv'; 
         const NUMERO_WHATSAPP = '573183035997';
 
@@ -182,7 +177,6 @@
                         let variable = 'Única'; let tipo = 'Otros'; let sku = ''; let imagen = '';
                         let parentSku = '';
                         
-                        // Normalización de columnas
                         for (let key in p) {
                             let k = String(key).toUpperCase().trim();
                             if (k === 'PRECIO') precioCosto = Number(String(p[key]).replace(/[^\d]/g, ""));
@@ -198,7 +192,6 @@
                         let precioFinal = precioVenta > 0 ? precioVenta : precioCosto;
                         if (!nombre || precioFinal <= 0) return; 
                         
-                        // Agrupar por Parent SKU, luego SKU, luego Nombre
                         let keyGrupo = parentSku || sku || nombre.toLowerCase();
 
                         if (!mapGrupos[keyGrupo]) {
@@ -212,7 +205,6 @@
                             };
                         }
 
-                        // Agregar variante al grupo
                         mapGrupos[keyGrupo].variantes.push({ 
                             NOMBRE: nombre, 
                             PRECIO: precioFinal, 
@@ -221,7 +213,6 @@
                             IMAGEN: imagen 
                         });
 
-                        // Actualizar precio mínimo ("Desde...")
                         if (precioFinal < mapGrupos[keyGrupo].precioMinimo) {
                             mapGrupos[keyGrupo].precioMinimo = precioFinal;
                         }
@@ -235,13 +226,11 @@
                         return;
                     }
 
-                    // Llenar filtro TIPO
                     let selectTipo = document.getElementById('filterTipo');
                     Array.from(tiposUnicos).sort().forEach(t => {
                         if(t) selectTipo.innerHTML += `<option value="${t}">${t}</option>`;
                     });
 
-                    // Ordenar por defecto: Más recientes
                     productosAgrupados.sort((a, b) => b.originalIndex - a.originalIndex);
                     productosFiltrados = [...productosAgrupados];
                     
@@ -252,13 +241,9 @@
 
         const formatoMoneda = (valor) => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(valor);
 
-        // Procesador de imagen Cloudinary (Cuadrado 1:1, Relleno blanco)
         function procesarImagen(linkCrudo) {
             if (!linkCrudo) return 'https://via.placeholder.com/500x500.png?text=Sin+Imagen';
             if (linkCrudo.includes('/upload/')) {
-                // ar_1:1 = Aspect Ratio Cuadrado
-                // c_pad = Rellenar (no recortar)
-                // b_white = Fondo blanco para el relleno
                 return linkCrudo.replace('/upload/', '/upload/f_auto,q_auto,w_500,ar_1:1,c_pad,b_white/');
             }
             return linkCrudo;
@@ -279,40 +264,35 @@
             lote.forEach((grupo) => {
                 window.diccionarioVariantes[grupo.idGrupo] = grupo;
                 
-                // --- CONSTRUCCIÓN DEL CARRUSEL BASADO EN VARIANTES ---
                 let imgsHtml = '';
                 let navHtml = '';
-                let totalImágenes = 0;
-                
+                let contadorTotalImgs = 0;
+
                 grupo.variantes.forEach((v) => {
-                    // Dividimos el contenido de la celda IMAGEN por el separador "|"
-                    // Si no hay "|", se crea un array de un solo elemento
-                    let enlaces = v.IMAGEN ? v.IMAGEN.split('|').map(s => s.trim()) : [null];
-                    
-                    enlaces.forEach((link) => {
-                        let imgFinal = procesarImagen(link || grupo.variantes[0].IMAGEN.split('|')[0]);
-                        let activeClass = totalImágenes === 0 ? 'active' : '';
-                        
-                        imgsHtml += `<img src="${imgFinal}" class="product-img ${activeClass}" data-idx="${totalImágenes}" loading="lazy">`;
-                        totalImágenes++;
+                    // SEPARA POR | CADA LINK DE LA CELDA
+                    let links = v.IMAGEN.split('|').map(s => s.trim()).filter(s => s !== "");
+                    if(links.length === 0) links = [null]; // Placeholder si está vacía
+
+                    links.forEach((l) => {
+                        let imgFinal = procesarImagen(l);
+                        let activeClass = contadorTotalImgs === 0 ? 'active' : '';
+                        imgsHtml += `<img src="${imgFinal}" class="product-img ${activeClass}" data-idx="${contadorTotalImgs}" loading="lazy">`;
+                        contadorTotalImgs++;
                     });
                 });
-                
-                // Solo mostramos flechas si el total de imágenes (sumando variantes y fotos extras) es mayor a 1
-                if(totalImágenes > 1) {
+
+                if(contadorTotalImgs > 1) {
                     navHtml = `
                         <button class="carousel-btn prev" onclick="cambiarImg('${grupo.idGrupo}', -1, event)">&#10094;</button>
                         <button class="carousel-btn next" onclick="cambiarImg('${grupo.idGrupo}', 1, event)">&#10095;</button>
                     `;
                 }
 
-                // Variable actual (para mostrar texto si hay variantes)
-                let textoVariableInicial = hayVarias ? grupo.variantes[0].VARIABLE : '';
+                let textoVariableInicial = grupo.variantes.length > 1 ? grupo.variantes[0].VARIABLE : '';
                 let htmlTag = textoVariableInicial && textoVariableInicial !== 'Única' 
                     ? `<div class="variant-tag" id="tag-${grupo.idGrupo}">${textoVariableInicial}</div>` 
                     : '';
 
-                let nombreSeguro = String(grupo.nombre).replace(/'/g, "\\'").replace(/"/g, '&quot;');
                 let preciosUnicos = new Set(grupo.variantes.map(v => v.PRECIO));
                 let uiPrecio = preciosUnicos.size > 1 
                     ? `<span class="price-desde">Desde</span>${formatoMoneda(grupo.precioMinimo)}` 
@@ -320,7 +300,6 @@
 
                 const card = document.createElement('div');
                 card.className = 'product-card';
-                // wrapper tiene data-current="0" para rastrear la imagen visible
                 card.innerHTML = `
                     <div class="image-wrapper" id="wrapper-${grupo.idGrupo}" data-current="0">
                         ${imgsHtml}
@@ -339,7 +318,6 @@
             itemsRenderizados += lote.length;
         }
 
-        // --- LÓGICA DE CARRUSEL ---
         window.cambiarImg = function(idGrupo, dir, event) {
             if(event) event.stopPropagation();
             
@@ -349,27 +327,13 @@
             
             let nextIdx = (current + dir + imgs.length) % imgs.length;
             
-            // Cambio visual
             imgs[current].classList.remove('active');
             imgs[nextIdx].classList.add('active');
             
-            // Actualizar estado
             wrapper.setAttribute('data-current', nextIdx);
             
-            // Actualizar Texto de Variante y Precio visualmente
-            let grupo = window.diccionarioVariantes[idGrupo];
-            let varianteActual = grupo.variantes[nextIdx];
-            
-            let tag = document.getElementById(`tag-${idGrupo}`);
-            if(tag && varianteActual.VARIABLE !== 'Única') {
-                tag.innerText = varianteActual.VARIABLE;
-            }
-            
-            // Si los precios varían, mostrar el precio exacto de la foto
-            let priceDiv = document.getElementById(`price-${idGrupo}`);
-            if(priceDiv) {
-                priceDiv.innerText = formatoMoneda(varianteActual.PRECIO);
-            }
+            // Actualización de precio si el usuario está viendo una variante específica
+            // (Opcional: puedes dejar el precio "Desde" o cambiarlo al de la variante)
         };
 
         window.addEventListener('scroll', () => {
@@ -401,35 +365,25 @@
             renderizarSiguienteLote();
         }
 
-        // --- AGREGAR AL CARRITO SEGÚN LA FOTO VISIBLE ---
         function agregarDesdeImagenActiva(idGrupo) {
             let grupo = window.diccionarioVariantes[idGrupo];
             let wrapper = document.getElementById('wrapper-' + idGrupo);
             let indexActivo = parseInt(wrapper.getAttribute('data-current')) || 0;
-            
-            // Obtenemos todas las imágenes renderizadas en el DOM de este producto
             let todasLasImgs = wrapper.querySelectorAll('.product-img');
-            let imagenActualSrc = todasLasImgs[indexActivo].src;
-        
-            let varianteElegida = grupo.variantes[0];
-    
             
-            let idUnico = varianteElegida.SKU || `${idGrupo}-${indexActivo}`;
-            let nombreFull = varianteElegida.VARIABLE !== 'Única' ? `${grupo.nombre} - ${varianteElegida.VARIABLE}` : grupo.nombre;
+            // Si hay variantes, intentamos asociar la imagen al SKU correcto
+            // Por simplicidad, tomamos la primera variante o la que coincida con el nombre
+            let varianteElegida = grupo.variantes[0]; 
+            let idUnico = varianteElegida.SKU || `${idGrupo}`;
             
-            // Usamos la imagen específica de esa variante
-            let imagenBase = varianteElegida.IMAGEN || grupo.variantes[0].IMAGEN;
-           let imagenFinal = imagenActualSrc;
-
             if (carrito[idUnico]) { 
                 carrito[idUnico].cantidad += 1; 
             } else { 
                 carrito[idUnico] = { 
                     id: idUnico, 
-                    nombre: nombreFull, 
-                    variableInfo: varianteElegida.VARIABLE, 
+                    nombre: grupo.nombre, 
                     precio: varianteElegida.PRECIO, 
-                    imagen: imagenFinal, 
+                    imagen: todasLasImgs[indexActivo].src, 
                     cantidad: 1 
                 }; 
             }
@@ -457,14 +411,11 @@
                 let subtotal = item.precio * item.cantidad;
                 total += subtotal; cantidadItems += item.cantidad;
                 
-                let divVariable = item.variableInfo !== 'Única' ? `<span class="cart-item-variant">${item.variableInfo}</span>` : '';
-
                 container.innerHTML += `
                     <div class="cart-item">
                         <img src="${item.imagen}" alt="img">
                         <div class="cart-item-info">
                             <div class="cart-item-title">${item.nombre}</div>
-                            ${divVariable}
                             <div class="cart-item-price">${formatoMoneda(item.precio)}</div>
                             <div class="qty-controls">
                                 <button class="qty-btn" onclick="cambiarCantidad('${item.id}', -1)">-</button>
@@ -489,7 +440,7 @@
             Object.values(carrito).forEach(item => {
                 let subtotal = item.precio * item.cantidad;
                 total += subtotal;
-                mensaje += `▪️ *${item.cantidad}x* ${item.nombre} (SKU: ${item.id})\n`;
+                mensaje += `▪️ *${item.cantidad}x* ${item.nombre} (ID: ${item.id})\n`;
             });
 
             mensaje += `\n🧾 *TOTAL A PAGAR: ${formatoMoneda(total)}*`;
