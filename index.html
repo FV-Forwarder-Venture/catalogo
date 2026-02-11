@@ -242,12 +242,24 @@
         const formatoMoneda = (valor) => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(valor);
 
         function procesarImagen(linkCrudo) {
-            if (!linkCrudo) return 'https://via.placeholder.com/500x500.png?text=Sin+Imagen';
-            if (linkCrudo.includes('/upload/')) {
-                return linkCrudo.replace('/upload/', '/upload/f_auto,q_auto,w_500,ar_1:1,c_pad,b_white/');
-            }
-            return linkCrudo;
-        }
+    if (!linkCrudo) return 'https://via.placeholder.com/500x500.png?text=Sin+Imagen';
+    
+    // Este es el ID de tu logo según tu URL
+    const PUBLIC_ID_LOGO = 'logo_agesc8'; 
+
+    if (linkCrudo.includes('/upload/')) {
+        // EXPLICACIÓN DE LOS PARÁMETROS:
+        // l_logo_agesc8: Llama a tu logo
+        // w_100: Tamaño del logo (100 pixeles de ancho)
+        // g_south_east: Lo posiciona abajo a la derecha
+        // o_80: 80% de opacidad (ligeramente transparente para que se vea profesional)
+        // x_15,y_15: Lo separa 15 pixeles de los bordes
+        const marcaAgua = `l_${PUBLIC_ID_LOGO},w_100,g_south_east,o_80,x_15,y_15/`;
+        
+        // Aplicamos primero el recorte cuadrado y fondo blanco, y luego encima el logo
+        return linkCrudo.replace('/upload/', `/upload/f_auto,q_auto,w_500,ar_1:1,c_pad,b_white/${marcaAgua}`);
+    }
+    return linkCrudo;
 
         function renderizarSiguienteLote() {
             const container = document.getElementById('app');
