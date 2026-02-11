@@ -86,7 +86,7 @@
     </div>
 
     <div id="app" class="grid-container">
-        <div id="loader">Cargando 5000+ ofertas...</div>
+        <div id="loader">Cargando catálogo maestro...</div>
     </div>
 
     <div id="cart-modal">
@@ -110,22 +110,52 @@
         let productosFiltrados = [];
         let carrito = {};
         
-        // --- VARIABLES SCROLL INFINITO ---
         let itemsRenderizados = 0;
-        const ITEMS_POR_PAGINA = 30; // Dibuja de 30 en 30 para que el celular no se cuelgue
+        const ITEMS_POR_PAGINA = 30; 
 
         async function cargarCatalogo() {
             try {
                 const response = await fetch(SCRIPT_URL);
                 const data = await response.json();
                 
-                // Mapeamos a las columnas EXACTAS de tu Excel
-                productosGlobales = data.filter(p => p.PRECIO && p.NOMBRE);
+                // --- MAPEO INTELIGENTE ---
+                // Se adapta a cualquier forma en que hayas escrito las columnas en el Excel
+                productosGlobales = data.map(p => {
+                    let objNormalizado = {};
+                    for (let key in p) {
+                        let llaveLimpia = key.toUpperCase().trim();
+                        
+                        // Si la columna tiene la palabra PRECIO (Ej: Precio_COP, PRECIO VENTA)
+                        if (llaveLimpia.includes('PRECIO')) {
+                            // Limpia signos de pesos o puntos para evitar que se rompa el código
+                            let precioLimpio = String(p[key]).replace(/\D/g, ""); 
+                            objNormalizado.PRECIO = Number(precioLimpio);
+                        }
+                        // Si la columna se llama Nombre, Producto, etc.
+                        else if (llaveLimpia.includes('NOMBRE') || llaveLimpia === 'PRODUCTO') {
+                            objNormalizado.NOMBRE = p[key];
+                        }
+                        // Si la columna se llama Imagen, Cloudinary_ID, Link, etc.
+                        else if (llaveLimpia.includes('IMAGEN') || llaveLimpia.includes('CLOUDINARY')) {
+                            objNormalizado.IMAGEN = p[key];
+                        }
+                        // Si se llama SKU, Codigo, ID
+                        else if (llaveLimpia.includes('SKU') || llaveLimpia === 'ID') {
+                            objNormalizado.SKU = p[key];
+                        }
+                        else {
+                            objNormalizado[llaveLimpia] = p[key]; 
+                        }
+                    }
+                    return objNormalizado;
+                }).filter(p => p.PRECIO > 0 && p.NOMBRE); // Descarta los que no tienen precio o nombre
+                
                 productosGlobales.reverse(); // Lo más nuevo arriba
                 
                 productosFiltrados = [...productosGlobales];
                 renderizarSiguienteLote();
             } catch (error) {
+                console.error(error);
                 document.getElementById('loader').innerHTML = 'Error al cargar el catálogo. Recarga la página.';
             }
         }
@@ -138,31 +168,30 @@
             if (itemsRenderizados === 0) {
                 container.innerHTML = ''; 
                 if (productosFiltrados.length === 0) {
-                    container.innerHTML = '<p style="text-align:center; grid-column:1/-1; padding:20px; color:#666;">No se encontraron productos.</p>';
+                    container.innerHTML = '<p style="text-align:center; grid-column:1/-1; padding:20px; color:#666;">No se encontraron productos en el catálogo.</p>';
                     return;
                 }
             }
 
             const lote = productosFiltrados.slice(itemsRenderizados, itemsRenderizados + ITEMS_POR_PAGINA);
 
-            lote.forEach((prod) => {
-                const idProducto = prod.SKU;
+            lote.forEach((prod, index) => {
+                const idProducto = prod.SKU || `PROD-${index}`;
                 
-                // --- MAGIA: OPTIMIZACIÓN Y MARCA DE AGUA ---
-                // Si la imagen tiene varias separadas por "|", toma solo la primera
-                let linkCrudo = prod.IMAGEN ? prod.IMAGEN.split('|')[0].trim() : '';
+                // --- PROTECCIÓN DE IMAGEN Y MARCA DE AGUA ---
+                let linkCrudo = prod.IMAGEN ? String(prod.IMAGEN).split('|')[0].trim() : '';
                 let imgUrl = 'https://via.placeholder.com/500x888.png?text=Sin+Imagen';
 
                 if (linkCrudo.includes('/upload/')) {
-                    // Inyectamos las mejoras: Formato auto, ancho 500, LOGO en esquina inferior derecha con opacidad 70%
+                    // Carga la foto con formato auto, calidad optimizada y la MARCA DE AGUA (l_logo)
                     imgUrl = linkCrudo.replace('/upload/', '/upload/f_auto,q_auto,w_500,l_logo,w_100,g_south_east,x_10,y_10,o_70/');
                 } else if (linkCrudo !== '') {
-                    imgUrl = linkCrudo; // Por si algún enlace no es de Cloudinary
+                    imgUrl = linkCrudo; 
                 }
 
                 const card = document.createElement('div');
                 card.className = 'product-card';
-                // Usamos replace en el nombre para evitar que comillas simples rompan el botón de carrito
+                // Evitamos que las comillas simples o dobles en los nombres dañen el botón
                 const nombreSeguro = prod.NOMBRE.replace(/'/g, "\\'").replace(/"/g, '&quot;');
 
                 card.innerHTML = `
@@ -181,7 +210,7 @@
             itemsRenderizados += lote.length;
         }
 
-        // Detecta cuando el cliente baja para dibujar las siguientes 30 tarjetas automáticamente
+        // Scroll Infinito
         window.addEventListener('scroll', () => {
             if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 600) {
                 if (itemsRenderizados < productosFiltrados.length) {
@@ -192,9 +221,8 @@
 
         function filtrarProductos() {
             const texto = document.getElementById('searchInput').value.toLowerCase();
-            productosFiltrados = productosGlobales.filter(p => p.NOMBRE.toLowerCase().includes(texto) || p.SKU.toLowerCase().includes(texto));
+            productosFiltrados = productosGlobales.filter(p => p.NOMBRE.toLowerCase().includes(texto) || (p.SKU && p.SKU.toLowerCase().includes(texto)));
             
-            // Reinicia el contador para dibujar desde cero con la búsqueda nueva
             itemsRenderizados = 0;
             renderizarSiguienteLote();
         }
