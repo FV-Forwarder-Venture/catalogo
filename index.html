@@ -19,7 +19,7 @@
             display: flex; justify-content: space-between; align-items: center;
             box-shadow: 0 2px 5px rgba(0,0,0,0.05);
         }
-        .logo { height: 120px; width: auto; max-width: 70%; object-fit: contain; }
+        .logo { height: 80px; width: auto; max-width: 70%; object-fit: contain; }
         
         .cart-icon { position: relative; cursor: pointer; font-size: 1.8rem; padding: 5px; }
         .cart-badge {
@@ -71,6 +71,7 @@
 
         @media (min-width: 768px) { .grid-container { grid-template-columns: repeat(4, 1fr); } }
     </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 </head>
 <body>
 
@@ -86,7 +87,7 @@
     </div>
 
     <div id="app" class="grid-container">
-        <div id="loader">Cargando productos...</div>
+        <div id="loader">Cargando miles de productos...</div>
     </div>
 
     <div id="cart-modal">
@@ -103,7 +104,11 @@
     <div id="toast">Agregado al carrito</div>
 
     <script>
-        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzvRjCxP9nFprYdmo7szBWkM5F-5nBGWGQMHcEuYk4h6br4UFY9gG4dkvp75bLjgyJv/exec'; 
+        // -------------------------------------------------------------
+        // 👇 PEGA EL ENLACE QUE TE DIO GOOGLE AL PUBLICAR EL CSV 👇
+        // -------------------------------------------------------------
+        const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ3XO-nqSQGQ6YdoAj7Nn5H-cyiWYb2Mw1ICSpkqYXP5JbZT7eXG4fb7S7JamNH2BbJCv8ZZrMnvcG1/pub?gid=0&single=true&output=csv'; 
+        
         const NUMERO_WHATSAPP = '573114957971';
 
         let productosGlobales = [];
@@ -114,68 +119,58 @@
         const ITEMS_POR_PAGINA = 30; 
 
         async function cargarCatalogo() {
-            try {
-                // Fetch con redirect "follow" por si Google Apps Script hace redirecciones
-                const response = await fetch(SCRIPT_URL, { redirect: "follow" });
-                const dataRaw = await response.json();
-                
-                let parsedData = [];
+            // Utilizamos PapaParse para descargar y estructurar los datos del CSV al instante
+            Papa.parse(CSV_URL, {
+                download: true,
+                header: true,
+                skipEmptyLines: true,
+                complete: function(results) {
+                    let dataRaw = results.data;
+                    
+                    // --- MAPEO INTELIGENTE ---
+                    productosGlobales = dataRaw.map(p => {
+                        let objNormalizado = {};
+                        for (let key in p) {
+                            let llaveLimpia = String(key).toUpperCase().trim();
+                            
+                            if (llaveLimpia.includes('PRECIO')) {
+                                let precioLimpio = String(p[key]).replace(/[^\d]/g, ""); 
+                                objNormalizado.PRECIO = Number(precioLimpio);
+                            }
+                            else if (llaveLimpia.includes('NOMBRE') || llaveLimpia === 'PRODUCTO') {
+                                objNormalizado.NOMBRE = p[key];
+                            }
+                            else if (llaveLimpia.includes('IMAGEN') || llaveLimpia.includes('CLOUDINARY')) {
+                                objNormalizado.IMAGEN = p[key];
+                            }
+                            else if (llaveLimpia.includes('SKU') || llaveLimpia === 'ID') {
+                                objNormalizado.SKU = p[key];
+                            }
+                        }
+                        return objNormalizado;
+                    }).filter(p => p.PRECIO > 0 && p.NOMBRE);
 
-                // --- TRADUCTOR DE FORMATO CRUDO (Solución Definitiva) ---
-                if (dataRaw.length > 0 && Array.isArray(dataRaw[0])) {
-                    // Si Google manda los datos como una lista de listas [[SKU, NOMBRE], [1, P1]]
-                    const headers = dataRaw[0].map(h => String(h));
-                    for (let i = 1; i < dataRaw.length; i++) {
-                        let row = dataRaw[i];
-                        let obj = {};
-                        headers.forEach((head, index) => { obj[head] = row[index]; });
-                        parsedData.push(obj);
+                    // --- AUTO-DIAGNÓSTICO ---
+                    if (productosGlobales.length === 0) {
+                        let columnasDetectadas = Object.keys(dataRaw[0] || {}).join(', ');
+                        document.getElementById('loader').innerHTML = `
+                            <div style="background:#ffebee; color:#c62828; padding:20px; border-radius:8px; grid-column:1/-1; margin:10px;">
+                                <b>¡La conexión fue un éxito, pero no encuentro el Precio o el Nombre!</b><br><br>
+                                Revisé tu Excel y estas son las columnas que encontré:<br>
+                                <i>${columnasDetectadas}</i><br><br>
+                                Asegúrate de que las palabras <b>NOMBRE</b> y <b>PRECIO</b> estén escritas en la primera fila de tu Excel.
+                            </div>`;
+                        return;
                     }
-                } else if (dataRaw.data && Array.isArray(dataRaw.data)) {
-                    parsedData = dataRaw.data;
-                } else if (Array.isArray(dataRaw)) {
-                    parsedData = dataRaw;
-                } else {
-                    throw new Error("Formato devuelto por Apps Script no reconocido.");
+
+                    productosGlobales.reverse(); 
+                    productosFiltrados = [...productosGlobales];
+                    renderizarSiguienteLote();
+                },
+                error: function(err) {
+                    document.getElementById('loader').innerHTML = 'Error conectando con Google Sheets. Verifica que hayas publicado el enlace correctamente.';
                 }
-
-                // --- MAPEO INTELIGENTE ---
-                productosGlobales = parsedData.map(p => {
-                    let objNormalizado = {};
-                    for (let key in p) {
-                        if (!key || p[key] === undefined) continue;
-                        
-                        let llaveLimpia = String(key).toUpperCase().trim();
-                        
-                        if (llaveLimpia.includes('PRECIO')) {
-                            // Limpia cualquier cosa que no sea número
-                            let precioLimpio = String(p[key]).replace(/[^\d]/g, ""); 
-                            objNormalizado.PRECIO = Number(precioLimpio);
-                        }
-                        else if (llaveLimpia.includes('NOMBRE') || llaveLimpia === 'PRODUCTO') {
-                            objNormalizado.NOMBRE = p[key];
-                        }
-                        else if (llaveLimpia.includes('IMAGEN') || llaveLimpia.includes('CLOUDINARY')) {
-                            objNormalizado.IMAGEN = p[key];
-                        }
-                        else if (llaveLimpia.includes('SKU') || llaveLimpia === 'ID') {
-                            objNormalizado.SKU = String(p[key]);
-                        }
-                        else {
-                            objNormalizado[llaveLimpia] = p[key]; 
-                        }
-                    }
-                    return objNormalizado;
-                }).filter(p => p.PRECIO > 0 && p.NOMBRE); // Descarta filas en blanco o sin precio válido
-                
-                productosGlobales.reverse(); // Lo más nuevo arriba
-                
-                productosFiltrados = [...productosGlobales];
-                renderizarSiguienteLote();
-            } catch (error) {
-                console.error(error);
-                document.getElementById('loader').innerHTML = 'Error al cargar el catálogo. Por favor, recarga la página.';
-            }
+            });
         }
 
         const formatoMoneda = (valor) => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(valor);
@@ -196,11 +191,9 @@
             lote.forEach((prod, index) => {
                 const idProducto = prod.SKU || `PROD-${index}`;
                 
-                // Extrae la primera imagen si hay varias separadas por pipe (|)
                 let linkCrudo = prod.IMAGEN ? String(prod.IMAGEN).split('|')[0].trim() : '';
                 let imgUrl = 'https://via.placeholder.com/500x888.png?text=Sin+Imagen';
 
-                // Si es de Cloudinary, le aplica compresión automática y tu MARCA DE AGUA (l_logo)
                 if (linkCrudo.includes('/upload/')) {
                     imgUrl = linkCrudo.replace('/upload/', '/upload/f_auto,q_auto,w_500,l_logo,w_100,g_south_east,x_10,y_10,o_70/');
                 } else if (linkCrudo !== '') {
@@ -209,7 +202,6 @@
 
                 const card = document.createElement('div');
                 card.className = 'product-card';
-                // Filtramos comillas en el nombre para no romper el botón de HTML
                 const nombreSeguro = String(prod.NOMBRE).replace(/'/g, "\\'").replace(/"/g, '&quot;');
 
                 card.innerHTML = `
@@ -228,7 +220,6 @@
             itemsRenderizados += lote.length;
         }
 
-        // --- SCROLL INFINITO (Anticolapso de celular) ---
         window.addEventListener('scroll', () => {
             if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 600) {
                 if (itemsRenderizados < productosFiltrados.length) {
