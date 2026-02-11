@@ -27,19 +27,27 @@
             border-radius: 50%; padding: 2px 6px; font-size: 0.75rem; font-weight: bold;
         }
 
-        .search-container { background: white; padding: 10px 15px; margin-bottom: 5px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
-        .search-bar { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 25px; font-size: 1rem; outline: none; background-color: #f9f9f9; }
+        /* --- CONTROLES Y FILTROS --- */
+        .controls-wrapper { background: white; padding: 10px 15px; margin-bottom: 5px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .search-bar { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 25px; font-size: 1rem; outline: none; background-color: #f9f9f9; margin-bottom: 10px; }
         .search-bar:focus { border-color: var(--primary); background-color: white; }
+        
+        .filters-container { display: flex; gap: 10px; }
+        .filter-select { flex: 1; padding: 10px; border-radius: 20px; border: 1px solid #ddd; font-size: 0.9rem; outline: none; background-color: #f9f9f9; cursor: pointer; }
+        .filter-select:focus { border-color: var(--primary); }
 
         .grid-container { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; padding: 8px; max-width: 1000px; margin: 0 auto; }
 
         .product-card { background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1); display: flex; flex-direction: column; }
         .image-wrapper { position: relative; width: 100%; padding-top: 177.77%; background-color: #ffffff; }
-        .product-img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: contain; }
+        .product-img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; } /* Se usa cover para llenar el 9:16 perfectamente */
 
         .info { padding: 8px; display: flex; flex-direction: column; flex-grow: 1; }
         .price { color: var(--primary); font-weight: 800; font-size: 1.15rem; }
+        .price-desde { font-size: 0.75rem; color: #777; font-weight: normal; margin-right: 3px; }
         .name { font-size: 0.85rem; color: #333; margin: 4px 0 8px 0; line-height: 1.2; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        
+        .variant-select { width: 100%; padding: 6px; margin-bottom: 8px; border-radius: 5px; border: 1px solid #ccc; font-size: 0.8rem; outline: none; background: #fff; }
         
         .btn-add { margin-top: auto; background: #111; color: white; border: none; padding: 8px; border-radius: 20px; font-size: 0.85rem; font-weight: bold; cursor: pointer; width: 100%; }
         .btn-add:active { background: var(--primary); transform: scale(0.98); }
@@ -53,10 +61,11 @@
         
         .cart-items { padding: 15px; flex-grow: 1; overflow-y: auto; }
         .cart-item { display: flex; gap: 10px; margin-bottom: 15px; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 10px; }
-        .cart-item img { width: 60px; height: 80px; object-fit: contain; border-radius: 5px; border: 1px solid #eee; }
+        .cart-item img { width: 60px; height: 106px; object-fit: cover; border-radius: 5px; border: 1px solid #eee; } /* Imagen del carrito también en 9:16 */
         .cart-item-info { flex-grow: 1; }
         .cart-item-title { font-size: 0.8rem; font-weight: bold; margin-bottom: 4px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;}
         .cart-item-price { color: var(--primary); font-size: 0.9rem; font-weight: bold; }
+        .cart-item-variant { font-size: 0.7rem; color: #666; background: #f0f0f0; padding: 2px 5px; border-radius: 3px; display: inline-block; margin-bottom: 3px; }
         
         .qty-controls { display: flex; align-items: center; gap: 12px; margin-top: 5px; }
         .qty-btn { background: #f0f0f0; border: none; width: 28px; height: 28px; border-radius: 50%; font-weight: bold; font-size: 1.1rem; cursor: pointer; }
@@ -82,12 +91,22 @@
         </div>
     </header>
 
-    <div class="search-container">
-        <input type="text" id="searchInput" class="search-bar" placeholder="Buscar productos por nombre o SKU..." oninput="filtrarProductos()">
+    <div class="controls-wrapper">
+        <input type="text" id="searchInput" class="search-bar" placeholder="Buscar por nombre o SKU..." oninput="aplicarFiltros()">
+        <div class="filters-container">
+            <select id="filterTipo" class="filter-select" onchange="aplicarFiltros()">
+                <option value="">Todos los tipos</option>
+                </select>
+            <select id="sortPrecio" class="filter-select" onchange="aplicarFiltros()">
+                <option value="">Ordenar precio</option>
+                <option value="asc">Menor a Mayor</option>
+                <option value="desc">Mayor a Menor</option>
+            </select>
+        </div>
     </div>
 
     <div id="app" class="grid-container">
-        <div id="loader">Cargando catálogo maestro...</div>
+        <div id="loader">Unificando miles de productos y optimizando variables...</div>
     </div>
 
     <div id="cart-modal">
@@ -109,10 +128,11 @@
         // -------------------------------------------------------------
         const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ3XO-nqSQGQ6YdoAj7Nn5H-cyiWYb2Mw1ICSpkqYXP5JbZT7eXG4fb7S7JamNH2BbJCv8ZZrMnvcG1/pub?gid=0&single=true&output=csv'; 
         
-        const NUMERO_WHATSAPP = '573114957971';
+        const NUMERO_WHATSAPP = '573183035997';
 
-        let productosGlobales = [];
+        let productosAgrupados = [];
         let productosFiltrados = [];
+        window.diccionarioVariantes = {}; // Almacena temporalmente los datos para el botón "Agregar"
         let carrito = {};
         
         let itemsRenderizados = 0;
@@ -125,51 +145,81 @@
                 skipEmptyLines: true,
                 complete: function(results) {
                     let dataRaw = results.data;
+                    let mapMejoresPrecios = {};
                     
-                    // --- MAPEO ESTRICTO PARA PRECIO Y PRECIO DE VENTA ---
-                    productosGlobales = dataRaw.map(p => {
-                        let objNormalizado = {};
-                        let precioCosto = 0;
-                        let precioVenta = 0;
+                    // PASO 1: Extraer datos y elegir al proveedor más barato por cada Variante
+                    dataRaw.forEach(p => {
+                        let nombre = ''; let precioCosto = 0; let precioVenta = 0;
+                        let variable = 'Única'; let tipo = 'Otros'; let sku = ''; let imagen = '';
                         
                         for (let key in p) {
-                            let llaveLimpia = String(key).toUpperCase().trim();
-                            
-                            if (llaveLimpia === 'PRECIO') {
-                                precioCosto = Number(String(p[key]).replace(/[^\d]/g, ""));
-                            }
-                            else if (llaveLimpia === 'PRECIO DE VENTA') {
-                                precioVenta = Number(String(p[key]).replace(/[^\d]/g, ""));
-                            }
-                            else if (llaveLimpia === 'NOMBRE') {
-                                objNormalizado.NOMBRE = p[key];
-                            }
-                            else if (llaveLimpia === 'IMAGEN') {
-                                objNormalizado.IMAGEN = p[key];
-                            }
-                            else if (llaveLimpia === 'SKU') {
-                                objNormalizado.SKU = p[key];
-                            }
+                            let k = String(key).toUpperCase().trim();
+                            if (k === 'PRECIO') precioCosto = Number(String(p[key]).replace(/[^\d]/g, ""));
+                            else if (k === 'PRECIO DE VENTA') precioVenta = Number(String(p[key]).replace(/[^\d]/g, ""));
+                            else if (k === 'NOMBRE') nombre = String(p[key]).trim();
+                            else if (k === 'VARIABLE') variable = String(p[key]).trim() || 'Única';
+                            else if (k === 'TIPO') tipo = String(p[key]).trim() || 'Otros';
+                            else if (k === 'IMAGEN') imagen = String(p[key]).trim();
+                            else if (k === 'SKU') sku = String(p[key]).trim();
                         }
                         
-                        // LÓGICA MÁGICA: Si hay Precio de Venta úsalo, de lo contrario, usa el Precio normal para que se muestre.
-                        objNormalizado.PRECIO = precioVenta > 0 ? precioVenta : precioCosto;
+                        let precioFinal = precioVenta > 0 ? precioVenta : precioCosto;
+                        if (!nombre || precioFinal <= 0) return; // Ignora productos dañados
                         
-                        return objNormalizado;
-                    }).filter(p => p.PRECIO > 0 && p.NOMBRE); // Solo descarta si AMBOS precios están en 0
+                        // Llave única que une el Nombre y su Variante específica
+                        let keyUnica = `${nombre.toLowerCase()}_|_${variable.toLowerCase()}`;
+                        
+                        // Si no existe la variante, o el precio actual es MENOR al que ya teníamos guardado, lo reemplaza
+                        if (!mapMejoresPrecios[keyUnica] || precioFinal < mapMejoresPrecios[keyUnica].PRECIO) {
+                            mapMejoresPrecios[keyUnica] = { NOMBRE: nombre, PRECIO: precioFinal, VARIABLE: variable, TIPO: tipo, IMAGEN: imagen, SKU: sku };
+                        }
+                    });
 
-                    if (productosGlobales.length === 0) {
-                        let columnasDetectadas = Object.keys(dataRaw[0] || {}).join(', ');
-                        document.getElementById('loader').innerHTML = `
-                            <div style="background:#ffebee; color:#c62828; padding:20px; border-radius:8px; grid-column:1/-1; margin:10px;">
-                                <b>¡Catálogo vacío o con error de lectura!</b><br><br>
-                                Columnas leídas: <i>${columnasDetectadas}</i>
-                            </div>`;
+                    // PASO 2: Agrupar todas las variantes sobrevivientes bajo su "Producto Padre"
+                    let mapGrupos = {};
+                    let tiposUnicos = new Set();
+
+                    Object.values(mapMejoresPrecios).forEach(item => {
+                        let nombreKey = item.NOMBRE.toLowerCase();
+                        if(item.TIPO !== 'Otros') tiposUnicos.add(item.TIPO);
+
+                        if (!mapGrupos[nombreKey]) {
+                            mapGrupos[nombreKey] = {
+                                idGrupo: "GRP-" + Math.random().toString(36).substr(2, 9),
+                                nombre: item.NOMBRE,
+                                tipo: item.TIPO,
+                                imagenPrincipal: item.IMAGEN,
+                                precioMinimo: item.PRECIO, // Servirá para el "Desde $..."
+                                variantes: []
+                            };
+                        }
+                        
+                        mapGrupos[nombreKey].variantes.push(item);
+                        
+                        // La imagen principal y el precio mínimo del grupo será la de la variante más barata
+                        if (item.PRECIO < mapGrupos[nombreKey].precioMinimo) {
+                            mapGrupos[nombreKey].precioMinimo = item.PRECIO;
+                            mapGrupos[nombreKey].tipo = item.TIPO; // Asigna el tipo del más barato
+                            if(item.IMAGEN) mapGrupos[nombreKey].imagenPrincipal = item.IMAGEN;
+                        }
+                    });
+
+                    productosAgrupados = Object.values(mapGrupos);
+                    
+                    if (productosAgrupados.length === 0) {
+                        document.getElementById('loader').innerHTML = `<div style="color:#c62828; padding:20px;">¡Catálogo vacío o error de lectura de columnas!</div>`;
                         return;
                     }
 
-                    productosGlobales.reverse(); 
-                    productosFiltrados = [...productosGlobales];
+                    // Llenar el desplegable de Filtro "Tipo"
+                    let selectTipo = document.getElementById('filterTipo');
+                    Array.from(tiposUnicos).sort().forEach(t => {
+                        if(t) selectTipo.innerHTML += `<option value="${t}">${t}</option>`;
+                    });
+
+                    // Ordenar por defecto: Los más recientes (inversión)
+                    productosAgrupados.reverse(); 
+                    productosFiltrados = [...productosAgrupados];
                     renderizarSiguienteLote();
                 },
                 error: function(err) {
@@ -180,44 +230,62 @@
 
         const formatoMoneda = (valor) => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(valor);
 
+        function procesarImagen(linkCrudo) {
+            let img = linkCrudo ? String(linkCrudo).split('|')[0].trim() : '';
+            if (!img) return 'https://via.placeholder.com/500x888.png?text=Sin+Imagen';
+            // Forza el formato 9:16 perfecto (1080x1920) y lo recorta llenando el espacio
+            if (img.includes('/upload/')) return img.replace('/upload/', '/upload/f_auto,q_auto,w_500,ar_9:16,c_fill/');
+            return img;
+        }
+
         function renderizarSiguienteLote() {
             const container = document.getElementById('app');
             
             if (itemsRenderizados === 0) {
                 container.innerHTML = ''; 
                 if (productosFiltrados.length === 0) {
-                    container.innerHTML = '<p style="text-align:center; grid-column:1/-1; padding:20px; color:#666; font-size:1.1rem;">No se encontraron productos.</p>';
+                    container.innerHTML = '<p style="text-align:center; grid-column:1/-1; padding:20px; color:#666;">No se encontraron productos.</p>';
                     return;
                 }
             }
 
             const lote = productosFiltrados.slice(itemsRenderizados, itemsRenderizados + ITEMS_POR_PAGINA);
 
-            lote.forEach((prod, index) => {
-                const idProducto = prod.SKU || `PROD-${index}`;
+            lote.forEach((grupo) => {
+                // Guardamos el grupo en un diccionario global para que el botón sepa qué agregar
+                window.diccionarioVariantes[grupo.idGrupo] = grupo;
                 
-                let linkCrudo = prod.IMAGEN ? String(prod.IMAGEN).split('|')[0].trim() : '';
-                let imgUrl = 'https://via.placeholder.com/500x888.png?text=Sin+Imagen';
+                let imgUrl = procesarImagen(grupo.imagenPrincipal);
+                let nombreSeguro = String(grupo.nombre).replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                
+                // Construcción de la UI del Precio ("Desde" si hay múltiples precios diferentes)
+                let preciosUnicos = new Set(grupo.variantes.map(v => v.PRECIO));
+                let uiPrecio = preciosUnicos.size > 1 
+                    ? `<span class="price-desde">Desde</span>${formatoMoneda(grupo.precioMinimo)}` 
+                    : formatoMoneda(grupo.precioMinimo);
 
-               if (linkCrudo.includes('/upload/')) {
-                // Optimiza calidad, peso, y recorta inteligentemente a formato 9:16
-                imgUrl = linkCrudo.replace('/upload/', '/upload/f_auto,q_auto,w_500,ar_9:16,c_fill/');
-                } else if (linkCrudo !== '') {
-                    imgUrl = linkCrudo; 
+                // Construcción del menú de variables (Oculto si solo hay "Única")
+                let htmlVariantes = '';
+                if (grupo.variantes.length > 1 || (grupo.variantes.length === 1 && grupo.variantes[0].VARIABLE !== 'Única')) {
+                    htmlVariantes = `<select class="variant-select" id="sel-${grupo.idGrupo}">`;
+                    grupo.variantes.forEach((v, idx) => {
+                        let textoOpcion = v.PRECIO !== grupo.precioMinimo ? `${v.VARIABLE} (+${formatoMoneda(v.PRECIO - grupo.precioMinimo)})` : v.VARIABLE;
+                        htmlVariantes += `<option value="${idx}">${textoOpcion}</option>`;
+                    });
+                    htmlVariantes += `</select>`;
                 }
 
                 const card = document.createElement('div');
                 card.className = 'product-card';
-                const nombreSeguro = String(prod.NOMBRE).replace(/'/g, "\\'").replace(/"/g, '&quot;');
-
                 card.innerHTML = `
                     <div class="image-wrapper">
                         <img src="${imgUrl}" alt="${nombreSeguro}" class="product-img" loading="lazy" onerror="this.src='https://via.placeholder.com/500x888.png?text=Error'">
                     </div>
                     <div class="info">
-                        <div class="price">${formatoMoneda(Number(prod.PRECIO))}</div>
-                        <div class="name">${prod.NOMBRE}</div>
-                        <button class="btn-add" onclick="agregarAlCarrito('${idProducto}', '${nombreSeguro}', ${Number(prod.PRECIO)}, '${imgUrl}')">Agregar</button>
+                        <div class="price">${uiPrecio}</div>
+                        <div class="name">${grupo.nombre}</div>
+                        ${htmlVariantes}
+                        <button class="btn-add" onclick="agregarAlCarritoVariante('${grupo.idGrupo}')">Agregar</button>
                     </div>
                 `;
                 container.appendChild(card);
@@ -228,26 +296,52 @@
 
         window.addEventListener('scroll', () => {
             if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 600) {
-                if (itemsRenderizados < productosFiltrados.length) {
-                    renderizarSiguienteLote();
-                }
+                if (itemsRenderizados < productosFiltrados.length) { renderizarSiguienteLote(); }
             }
         });
 
-        function filtrarProductos() {
-            const texto = document.getElementById('searchInput').value.toLowerCase();
-            productosFiltrados = productosGlobales.filter(p => 
-                String(p.NOMBRE).toLowerCase().includes(texto) || 
-                (p.SKU && String(p.SKU).toLowerCase().includes(texto))
-            );
+        function aplicarFiltros() {
+            let texto = document.getElementById('searchInput').value.toLowerCase();
+            let tipoSel = document.getElementById('filterTipo').value;
+            let sortDir = document.getElementById('sortPrecio').value;
+
+            // Filtro por Texto y Categoría (TIPO)
+            productosFiltrados = productosAgrupados.filter(g => {
+                let coincideTexto = g.nombre.toLowerCase().includes(texto) || g.variantes.some(v => v.SKU && v.SKU.toLowerCase().includes(texto));
+                let coincideTipo = tipoSel === "" || g.tipo === tipoSel;
+                return coincideTexto && coincideTipo;
+            });
             
+            // Ordenamiento por Precio Mínimo
+            if (sortDir === 'asc') {
+                productosFiltrados.sort((a, b) => a.precioMinimo - b.precioMinimo);
+            } else if (sortDir === 'desc') {
+                productosFiltrados.sort((a, b) => b.precioMinimo - a.precioMinimo);
+            }
+
             itemsRenderizados = 0;
             renderizarSiguienteLote();
         }
 
-        function agregarAlCarrito(id, nombre, precio, imagen) {
-            if (carrito[id]) { carrito[id].cantidad += 1; } 
-            else { carrito[id] = { id, nombre, precio, imagen, cantidad: 1 }; }
+        // --- LÓGICA DEL CARRITO CON VARIANTES ---
+        function agregarAlCarritoVariante(idGrupo) {
+            let grupo = window.diccionarioVariantes[idGrupo];
+            let selectElem = document.getElementById(`sel-${idGrupo}`);
+            
+            // Si tiene select, agarramos el índice seleccionado, si no, es el 0
+            let indexVariante = selectElem ? selectElem.value : 0;
+            let varianteElegida = grupo.variantes[indexVariante];
+            
+            let idUnicoCarrito = varianteElegida.SKU || `${idGrupo}-${indexVariante}`;
+            let nombreLargo = varianteElegida.VARIABLE !== 'Única' ? `${grupo.nombre} - ${varianteElegida.VARIABLE}` : grupo.nombre;
+            let imagenFinal = procesarImagen(varianteElegida.IMAGEN || grupo.imagenPrincipal);
+
+            if (carrito[idUnicoCarrito]) { 
+                carrito[idUnicoCarrito].cantidad += 1; 
+            } else { 
+                carrito[idUnicoCarrito] = { id: idUnicoCarrito, nombre: nombreLargo, variableInfo: varianteElegida.VARIABLE, precio: varianteElegida.PRECIO, imagen: imagenFinal, cantidad: 1 }; 
+            }
+            
             actualizarUI_Carrito();
             mostrarToast();
         }
@@ -265,20 +359,20 @@
             const totalElem = document.getElementById('cart-total-price');
             const badge = document.getElementById('cart-count');
             
-            container.innerHTML = '';
-            let total = 0;
-            let cantidadItems = 0;
+            container.innerHTML = ''; let total = 0; let cantidadItems = 0;
 
             Object.values(carrito).forEach(item => {
-                const subtotal = item.precio * item.cantidad;
-                total += subtotal;
-                cantidadItems += item.cantidad;
+                let subtotal = item.precio * item.cantidad;
+                total += subtotal; cantidadItems += item.cantidad;
+                
+                let divVariable = item.variableInfo !== 'Única' ? `<span class="cart-item-variant">${item.variableInfo}</span>` : '';
 
                 container.innerHTML += `
                     <div class="cart-item">
                         <img src="${item.imagen}" alt="img">
                         <div class="cart-item-info">
                             <div class="cart-item-title">${item.nombre}</div>
+                            ${divVariable}
                             <div class="cart-item-price">${formatoMoneda(item.precio)}</div>
                             <div class="qty-controls">
                                 <button class="qty-btn" onclick="cambiarCantidad('${item.id}', -1)">-</button>
@@ -292,7 +386,6 @@
 
             totalElem.textContent = formatoMoneda(total);
             badge.textContent = cantidadItems;
-
             if (cantidadItems === 0) { container.innerHTML = '<p style="text-align:center; margin-top:30px; color:#888;">Tu carrito está vacío</p>'; }
         }
 
@@ -302,7 +395,7 @@
             let total = 0;
 
             Object.values(carrito).forEach(item => {
-                const subtotal = item.precio * item.cantidad;
+                let subtotal = item.precio * item.cantidad;
                 total += subtotal;
                 mensaje += `▪️ *${item.cantidad}x* ${item.nombre} (SKU: ${item.id})\n`;
             });
