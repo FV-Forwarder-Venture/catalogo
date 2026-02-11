@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Catálogo | Forwarder Venture</title>
+    <style>
+        /* Estilo Reset y Variables */
+        :root {
+            --primary: #ff4e00; /* Color estilo Temu/Shopee */
+            --bg-color: #f5f5f5;
+            --text-main: #333;
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+        body { background-color: var(--bg-color); color: var(--text-main); padding-bottom: 20px; }
+
+        /* --- CABECERA STICKY --- */
+        header {
+            background: white;
+            padding: 10px 15px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        .logo { height: 40px; width: auto; object-fit: contain; }
+        
+        .cart-icon {
+            position: relative;
+            cursor: pointer;
+            font-size: 1.5rem;
+            padding: 5px;
+        }
+        .cart-badge {
+            position: absolute;
+            top: 0px;
+            right: -5px;
+            background: var(--primary);
+            color: white;
+            border-radius: 50%;
+            padding: 2px 6px;
+            font-size: 0.7rem;
+            font-weight: bold;
+        }
+
+        /* --- BUSCADOR --- */
+        .search-container {
+            background: white;
+            padding: 10px 15px;
+            margin-bottom: 5px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        .search-bar {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            font-size: 0.95rem;
+            outline: none;
+        }
+        .search-bar:focus { border-color: var(--primary); }
+
+        /* --- GRILLA TEMU --- */
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+            padding: 8px;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .product-card {
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Imagen 9:16 (Sin opacidad para evitar el bug de scroll) */
+        .image-wrapper {
+            position: relative;
+            width: 100%;
+            padding-top: 177.77%; 
+            background-color: #ffffff; 
+        }
+        .product-img {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            object-fit: contain; /* Contain evita que se corten los bordes de tus productos */
+        }
+
+        .info { padding: 8px; display: flex; flex-direction: column; flex-grow: 1; }
+        .price { color: var(--primary); font-weight: 800; font-size: 1.15rem; }
+        .name { font-size: 0.85rem; color: #333; margin: 4px 0 8px 0; line-height: 1.2; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        
+        .btn-add {
+            margin-top: auto;
+            background: #111;
+            color: white;
+            border: none;
+            padding: 8px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+        }
+        .btn-add:active { background: var(--primary); transform: scale(0.98); }
+
+        /* --- MODAL DEL CARRITO --- */
+        #cart-modal {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6);
+            z-index: 1000;
+            display: none;
+            justify-content: flex-end;
+        }
+        .cart-content {
+            background: white;
+            width: 85%;
+            max-width: 400px;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            animation: slideIn 0.3s forwards;
+        }
+        @keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
+        
+        .cart-header { padding: 15px; border-bottom: 1px solid #ddd; display: flex; justify-content: space-between; align-items: center; font-weight: bold; font-size: 1.1rem; }
+        .close-cart { cursor: pointer; font-size: 1.5rem; color: #888; }
+        
+        .cart-items { padding: 15px; flex-grow: 1; overflow-y: auto; }
+        .cart-item { display: flex; gap: 10px; margin-bottom: 15px; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+        .cart-item img { width: 60px; height: 80px; object-fit: contain; border-radius: 5px; border: 1px solid #eee; }
+        .cart-item-info { flex-grow: 1; }
+        .cart-item-title { font-size: 0.8rem; font-weight: bold; margin-bottom: 4px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;}
+        .cart-item-price { color: var(--primary); font-size: 0.9rem; font-weight: bold; }
+        
+        .qty-controls { display: flex; align-items: center; gap: 12px; margin-top: 5px; }
+        .qty-btn { background: #f0f0f0; border: none; width: 28px; height: 28px; border-radius: 50%; font-weight: bold; font-size: 1.1rem; cursor: pointer; }
+        
+        .cart-footer { padding: 15px; border-top: 1px solid #ddd; background: white; }
+        .cart-total { display: flex; justify-content: space-between; font-size: 1.2rem; font-weight: bold; margin-bottom: 15px; }
+        .btn-whatsapp { display: block; width: 100%; background: #25D366; color: white; text-align: center; padding: 14px; border-radius: 25px; font-weight: bold; font-size: 1rem; border: none; cursor: pointer; }
+
+        #loader { text-align: center; padding: 40px; color: #888; grid-column: 1 / -1; }
+        #toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #333; color: white; padding: 12px 24px; border-radius: 25px; font-size: 0.9rem; z-index: 2000; opacity: 0; transition: opacity 0.3s; pointer-events: none; }
+        #toast.show { opacity: 1; }
+
+        @media (min-width: 768px) { .grid-container { grid-template-columns: repeat(4, 1fr); } }
+    </style>
+</head>
+<body>
+
+    <header>
+        <img src="logo.jpg" alt="Forwarder Venture" class="logo" onerror="this.style.display='none'">
+        <div class="cart-icon" onclick="toggleCart()">
+            🛒 <span class="cart-badge" id="cart-count">0</span>
+        </div>
+    </header>
+
+    <div class="search-container">
+        <input type="text" id="searchInput" class="search-bar" placeholder="Buscar productos..." oninput="filtrarProductos()">
+    </div>
+
+    <div id="app" class="grid-container">
+        <div id="loader">Cargando ofertas...</div>
+    </div>
+
+    <div id="cart-modal">
+        <div class="cart-content">
+            <div class="cart-header">
+                Tu Carrito
+                <span class="close-cart" onclick="toggleCart()">&times;</span>
+            </div>
+            <div class="cart-items" id="cart-items-container">
+                </div>
+            <div class="cart-footer">
+                <div class="cart-total">
+                    <span>Total:</span>
+                    <span id="cart-total-price">$0</span>
+                </div>
+                <button class="btn-whatsapp" onclick="enviarPedido()">Hacer Pedido por WhatsApp</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast">Agregado al carrito</div>
+
+    <script>
+        // --- CONFIGURACIÓN ---
+        const CLOUD_NAME = 'ddbfb3e3n'; 
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw2wOoteFwD6INS_eRTjbcZanVthNuqpbKgss08e2dG8hWHdlW1ukcHiV-p3B8vtb_U/exec'; 
+        const NUMERO_WHATSAPP = '573114957971'; // Ya configurado con tu número
+
+        let productosGlobales = [];
+        let carrito = {};
+
+        async function cargarCatalogo() {
+            try {
+                const response = await fetch(SCRIPT_URL);
+                const data = await response.json();
+                
+                // Filtramos los que no tengan precio o nombre
+                productosGlobales = data.filter(p => p.Precio_COP && p.Nombre);
+                
+                // Invertimos para mostrar lo más nuevo arriba
+                productosGlobales.reverse();
+                
+                renderizarProductos(productosGlobales);
+            } catch (error) {
+                document.getElementById('loader').innerHTML = 'Error al cargar el catálogo. Intenta recargar la página.';
+            }
+        }
+
+        const formatoMoneda = (valor) => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(valor);
+
+        function renderizarProductos(lista) {
+            const container = document.getElementById('app');
+            container.innerHTML = ''; 
+
+            if (lista.length === 0) {
+                container.innerHTML = '<p style="text-align:center; grid-column:1/-1; padding:20px;">No se encontraron productos.</p>';
+                return;
+            }
+
+            lista.forEach((prod, index) => {
+                // Si no hay Cloudinary_ID, asignamos un ID temporal basado en el índice para poder agregarlo al carrito
+                const idProducto = prod.SKU || `PROD-${index}`;
+                const imgUrl = prod.Cloudinary_ID 
+                    ? `https://res.cloudinary.com/${CLOUD_NAME}/image/upload/f_auto,q_auto,w_500/${prod.Cloudinary_ID}`
+                    : 'https://via.placeholder.com/500x888.png?text=Sin+Imagen';
+
+                const card = document.createElement('div');
+                card.className = 'product-card';
+                card.innerHTML = `
+                    <div class="image-wrapper">
+                        <img src="${imgUrl}" alt="${prod.Nombre}" class="product-img" loading="lazy" onerror="this.src='https://via.placeholder.com/500x888.png?text=Error'">
+                    </div>
+                    <div class="info">
+                        <div class="price">${formatoMoneda(prod.Precio_COP)}</div>
+                        <div class="name">${prod.Nombre}</div>
+                        <button class="btn-add" onclick="agregarAlCarrito('${idProducto}', '${prod.Nombre.replace(/'/g, "\\'")}', ${prod.Precio_COP}, '${imgUrl}')">Agregar al carrito</button>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function filtrarProductos() {
+            const texto = document.getElementById('searchInput').value.toLowerCase();
+            const filtrados = productosGlobales.filter(p => p.Nombre.toLowerCase().includes(texto));
+            renderizarProductos(filtrados);
+        }
+
+        // --- LÓGICA DEL CARRITO ---
+        function agregarAlCarrito(id, nombre, precio, imagen) {
+            if (carrito[id]) {
+                carrito[id].cantidad += 1;
+            } else {
+                carrito[id] = { id, nombre, precio, imagen, cantidad: 1 };
+            }
+            actualizarUI_Carrito();
+            mostrarToast();
+        }
+
+        function cambiarCantidad(id, delta) {
+            if (carrito[id]) {
+                carrito[id].cantidad += delta;
+                if (carrito[id].cantidad <= 0) delete carrito[id];
+                actualizarUI_Carrito();
+            }
+        }
+
+        function actualizarUI_Carrito() {
+            const container = document.getElementById('cart-items-container');
+            const totalElem = document.getElementById('cart-total-price');
+            const badge = document.getElementById('cart-count');
+            
+            container.innerHTML = '';
+            let total = 0;
+            let cantidadItems = 0;
+
+            Object.values(carrito).forEach(item => {
+                const subtotal = item.precio * item.cantidad;
+                total += subtotal;
+                cantidadItems += item.cantidad;
+
+                container.innerHTML += `
+                    <div class="cart-item">
+                        <img src="${item.imagen}" alt="img">
+                        <div class="cart-item-info">
+                            <div class="cart-item-title">${item.nombre}</div>
+                            <div class="cart-item-price">${formatoMoneda(item.precio)}</div>
+                            <div class="qty-controls">
+                                <button class="qty-btn" onclick="cambiarCantidad('${item.id}', -1)">-</button>
+                                <span>${item.cantidad}</span>
+                                <button class="qty-btn" onclick="cambiarCantidad('${item.id}', 1)">+</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            totalElem.textContent = formatoMoneda(total);
+            badge.textContent = cantidadItems;
+
+            if (cantidadItems === 0) {
+                container.innerHTML = '<p style="text-align:center; margin-top:30px; color:#888;">Tu carrito está vacío</p>';
+            }
+        }
+
+        function enviarPedido() {
+            if (Object.keys(carrito).length === 0) return alert("Agrega al menos un producto para hacer el pedido.");
+
+            let mensaje = "¡Hola! 👋 Quiero realizar este pedido:\n\n";
+            let total = 0;
+
+            Object.values(carrito).forEach(item => {
+                const subtotal = item.precio * item.cantidad;
+                total += subtotal;
+                mensaje += `🛒 *${item.cantidad}x* ${item.nombre}\n`;
+                mensaje += `   └ Subtotal: ${formatoMoneda(subtotal)}\n\n`;
+            });
+
+            mensaje += `🧾 *TOTAL A PAGAR: ${formatoMoneda(total)}*`;
+            
+            const url = `https://wa.me/${NUMERO_WHATSAPP}?text=${encodeURIComponent(mensaje)}`;
+            window.open(url, '_blank');
+        }
+
+        function toggleCart() {
+            const modal = document.getElementById('cart-modal');
+            modal.style.display = modal.style.display === 'flex' ? 'none' : 'flex';
+        }
+
+        function mostrarToast() {
+            const toast = document.getElementById('toast');
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 2000);
+        }
+    </script>
+</body>
+</html>
