@@ -282,18 +282,24 @@
                 // --- CONSTRUCCIÓN DEL CARRUSEL BASADO EN VARIANTES ---
                 let imgsHtml = '';
                 let navHtml = '';
-                let hayVarias = grupo.variantes.length > 1;
-
-                grupo.variantes.forEach((v, i) => {
-                    // Si la variante no tiene foto, usa la primera disponible del grupo
-                    let imgBase = v.IMAGEN || grupo.variantes[0].IMAGEN;
-                    let imgFinal = procesarImagen(imgBase);
-                    let activeClass = i === 0 ? 'active' : '';
-                    // Data-idx es crucial para saber qué variante es
-                    imgsHtml += `<img src="${imgFinal}" class="product-img ${activeClass}" data-idx="${i}" loading="lazy">`;
+                let totalImágenes = 0;
+                
+                grupo.variantes.forEach((v) => {
+                    // Dividimos el contenido de la celda IMAGEN por el separador "|"
+                    // Si no hay "|", se crea un array de un solo elemento
+                    let enlaces = v.IMAGEN ? v.IMAGEN.split('|').map(s => s.trim()) : [null];
+                    
+                    enlaces.forEach((link) => {
+                        let imgFinal = procesarImagen(link || grupo.variantes[0].IMAGEN.split('|')[0]);
+                        let activeClass = totalImágenes === 0 ? 'active' : '';
+                        
+                        imgsHtml += `<img src="${imgFinal}" class="product-img ${activeClass}" data-idx="${totalImágenes}" loading="lazy">`;
+                        totalImágenes++;
+                    });
                 });
-
-                if(hayVarias) {
+                
+                // Solo mostramos flechas si el total de imágenes (sumando variantes y fotos extras) es mayor a 1
+                if(totalImágenes > 1) {
                     navHtml = `
                         <button class="carousel-btn prev" onclick="cambiarImg('${grupo.idGrupo}', -1, event)">&#10094;</button>
                         <button class="carousel-btn next" onclick="cambiarImg('${grupo.idGrupo}', 1, event)">&#10095;</button>
@@ -399,18 +405,21 @@
         function agregarDesdeImagenActiva(idGrupo) {
             let grupo = window.diccionarioVariantes[idGrupo];
             let wrapper = document.getElementById('wrapper-' + idGrupo);
-            
-            // Obtenemos el índice de la foto que el usuario está viendo
             let indexActivo = parseInt(wrapper.getAttribute('data-current')) || 0;
             
-            let varianteElegida = grupo.variantes[indexActivo];
+            // Obtenemos todas las imágenes renderizadas en el DOM de este producto
+            let todasLasImgs = wrapper.querySelectorAll('.product-img');
+            let imagenActualSrc = todasLasImgs[indexActivo].src;
+        
+            let varianteElegida = grupo.variantes[0];
+    
             
             let idUnico = varianteElegida.SKU || `${idGrupo}-${indexActivo}`;
             let nombreFull = varianteElegida.VARIABLE !== 'Única' ? `${grupo.nombre} - ${varianteElegida.VARIABLE}` : grupo.nombre;
             
             // Usamos la imagen específica de esa variante
             let imagenBase = varianteElegida.IMAGEN || grupo.variantes[0].IMAGEN;
-            let imagenFinal = procesarImagen(imagenBase);
+           let imagenFinal = imagenActualSrc;
 
             if (carrito[idUnico]) { 
                 carrito[idUnico].cantidad += 1; 
