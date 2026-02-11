@@ -87,7 +87,7 @@
     </div>
 
     <div id="app" class="grid-container">
-        <div id="loader">Cargando miles de productos...</div>
+        <div id="loader">Cargando catálogo maestro...</div>
     </div>
 
     <div id="cart-modal">
@@ -107,7 +107,7 @@
         // -------------------------------------------------------------
         // 👇 PEGA EL ENLACE QUE TE DIO GOOGLE AL PUBLICAR EL CSV 👇
         // -------------------------------------------------------------
-        const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ3XO-nqSQGQ6YdoAj7Nn5H-cyiWYb2Mw1ICSpkqYXP5JbZT7eXG4fb7S7JamNH2BbJCv8ZZrMnvcG1/pub?gid=0&single=true&output=csv'; 
+        const CSV_URL = 'PEGAR_AQUI_EL_ENLACE_CSV_DE_GOOGLE'; 
         
         const NUMERO_WHATSAPP = '573114957971';
 
@@ -119,7 +119,6 @@
         const ITEMS_POR_PAGINA = 30; 
 
         async function cargarCatalogo() {
-            // Utilizamos PapaParse para descargar y estructurar los datos del CSV al instante
             Papa.parse(CSV_URL, {
                 download: true,
                 header: true,
@@ -127,38 +126,44 @@
                 complete: function(results) {
                     let dataRaw = results.data;
                     
-                    // --- MAPEO INTELIGENTE ---
+                    // --- MAPEO ESTRICTO PARA PRECIO Y PRECIO DE VENTA ---
                     productosGlobales = dataRaw.map(p => {
                         let objNormalizado = {};
+                        let precioCosto = 0;
+                        let precioVenta = 0;
+                        
                         for (let key in p) {
                             let llaveLimpia = String(key).toUpperCase().trim();
                             
-                            if (llaveLimpia.includes('PRECIO')) {
-                                let precioLimpio = String(p[key]).replace(/[^\d]/g, ""); 
-                                objNormalizado.PRECIO = Number(precioLimpio);
+                            if (llaveLimpia === 'PRECIO') {
+                                precioCosto = Number(String(p[key]).replace(/[^\d]/g, ""));
                             }
-                            else if (llaveLimpia.includes('NOMBRE') || llaveLimpia === 'PRODUCTO') {
+                            else if (llaveLimpia === 'PRECIO DE VENTA') {
+                                precioVenta = Number(String(p[key]).replace(/[^\d]/g, ""));
+                            }
+                            else if (llaveLimpia === 'NOMBRE') {
                                 objNormalizado.NOMBRE = p[key];
                             }
-                            else if (llaveLimpia.includes('IMAGEN') || llaveLimpia.includes('CLOUDINARY')) {
+                            else if (llaveLimpia === 'IMAGEN') {
                                 objNormalizado.IMAGEN = p[key];
                             }
-                            else if (llaveLimpia.includes('SKU') || llaveLimpia === 'ID') {
+                            else if (llaveLimpia === 'SKU') {
                                 objNormalizado.SKU = p[key];
                             }
                         }
+                        
+                        // LÓGICA MÁGICA: Si hay Precio de Venta úsalo, de lo contrario, usa el Precio normal para que se muestre.
+                        objNormalizado.PRECIO = precioVenta > 0 ? precioVenta : precioCosto;
+                        
                         return objNormalizado;
-                    }).filter(p => p.PRECIO > 0 && p.NOMBRE);
+                    }).filter(p => p.PRECIO > 0 && p.NOMBRE); // Solo descarta si AMBOS precios están en 0
 
-                    // --- AUTO-DIAGNÓSTICO ---
                     if (productosGlobales.length === 0) {
                         let columnasDetectadas = Object.keys(dataRaw[0] || {}).join(', ');
                         document.getElementById('loader').innerHTML = `
                             <div style="background:#ffebee; color:#c62828; padding:20px; border-radius:8px; grid-column:1/-1; margin:10px;">
-                                <b>¡La conexión fue un éxito, pero no encuentro el Precio o el Nombre!</b><br><br>
-                                Revisé tu Excel y estas son las columnas que encontré:<br>
-                                <i>${columnasDetectadas}</i><br><br>
-                                Asegúrate de que las palabras <b>NOMBRE</b> y <b>PRECIO</b> estén escritas en la primera fila de tu Excel.
+                                <b>¡Catálogo vacío o con error de lectura!</b><br><br>
+                                Columnas leídas: <i>${columnasDetectadas}</i>
                             </div>`;
                         return;
                     }
@@ -168,7 +173,7 @@
                     renderizarSiguienteLote();
                 },
                 error: function(err) {
-                    document.getElementById('loader').innerHTML = 'Error conectando con Google Sheets. Verifica que hayas publicado el enlace correctamente.';
+                    document.getElementById('loader').innerHTML = 'Error conectando con Google Sheets.';
                 }
             });
         }
@@ -239,7 +244,6 @@
             renderizarSiguienteLote();
         }
 
-        // --- LÓGICA DEL CARRITO ---
         function agregarAlCarrito(id, nombre, precio, imagen) {
             if (carrito[id]) { carrito[id].cantidad += 1; } 
             else { carrito[id] = { id, nombre, precio, imagen, cantidad: 1 }; }
