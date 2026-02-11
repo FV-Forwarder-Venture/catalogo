@@ -82,11 +82,11 @@
     </header>
 
     <div class="search-container">
-        <input type="text" id="searchInput" class="search-bar" placeholder="Buscar productos..." oninput="filtrarProductos()">
+        <input type="text" id="searchInput" class="search-bar" placeholder="Buscar productos por nombre o SKU..." oninput="filtrarProductos()">
     </div>
 
     <div id="app" class="grid-container">
-        <div id="loader">Cargando catálogo maestro...</div>
+        <div id="loader">Cargando 5000+ referencias...</div>
     </div>
 
     <div id="cart-modal">
@@ -115,40 +115,58 @@
 
         async function cargarCatalogo() {
             try {
-                const response = await fetch(SCRIPT_URL);
-                const data = await response.json();
+                // Fetch con redirect "follow" por si Google Apps Script hace redirecciones
+                const response = await fetch(SCRIPT_URL, { redirect: "follow" });
+                const dataRaw = await response.json();
                 
+                let parsedData = [];
+
+                // --- TRADUCTOR DE FORMATO CRUDO (Solución Definitiva) ---
+                if (dataRaw.length > 0 && Array.isArray(dataRaw[0])) {
+                    // Si Google manda los datos como una lista de listas [[SKU, NOMBRE], [1, P1]]
+                    const headers = dataRaw[0].map(h => String(h));
+                    for (let i = 1; i < dataRaw.length; i++) {
+                        let row = dataRaw[i];
+                        let obj = {};
+                        headers.forEach((head, index) => { obj[head] = row[index]; });
+                        parsedData.push(obj);
+                    }
+                } else if (dataRaw.data && Array.isArray(dataRaw.data)) {
+                    parsedData = dataRaw.data;
+                } else if (Array.isArray(dataRaw)) {
+                    parsedData = dataRaw;
+                } else {
+                    throw new Error("Formato devuelto por Apps Script no reconocido.");
+                }
+
                 // --- MAPEO INTELIGENTE ---
-                // Se adapta a cualquier forma en que hayas escrito las columnas en el Excel
-                productosGlobales = data.map(p => {
+                productosGlobales = parsedData.map(p => {
                     let objNormalizado = {};
                     for (let key in p) {
-                        let llaveLimpia = key.toUpperCase().trim();
+                        if (!key || p[key] === undefined) continue;
                         
-                        // Si la columna tiene la palabra PRECIO (Ej: Precio_COP, PRECIO VENTA)
+                        let llaveLimpia = String(key).toUpperCase().trim();
+                        
                         if (llaveLimpia.includes('PRECIO')) {
-                            // Limpia signos de pesos o puntos para evitar que se rompa el código
-                            let precioLimpio = String(p[key]).replace(/\D/g, ""); 
+                            // Limpia cualquier cosa que no sea número
+                            let precioLimpio = String(p[key]).replace(/[^\d]/g, ""); 
                             objNormalizado.PRECIO = Number(precioLimpio);
                         }
-                        // Si la columna se llama Nombre, Producto, etc.
                         else if (llaveLimpia.includes('NOMBRE') || llaveLimpia === 'PRODUCTO') {
                             objNormalizado.NOMBRE = p[key];
                         }
-                        // Si la columna se llama Imagen, Cloudinary_ID, Link, etc.
                         else if (llaveLimpia.includes('IMAGEN') || llaveLimpia.includes('CLOUDINARY')) {
                             objNormalizado.IMAGEN = p[key];
                         }
-                        // Si se llama SKU, Codigo, ID
                         else if (llaveLimpia.includes('SKU') || llaveLimpia === 'ID') {
-                            objNormalizado.SKU = p[key];
+                            objNormalizado.SKU = String(p[key]);
                         }
                         else {
                             objNormalizado[llaveLimpia] = p[key]; 
                         }
                     }
                     return objNormalizado;
-                }).filter(p => p.PRECIO > 0 && p.NOMBRE); // Descarta los que no tienen precio o nombre
+                }).filter(p => p.PRECIO > 0 && p.NOMBRE); // Descarta filas en blanco o sin precio válido
                 
                 productosGlobales.reverse(); // Lo más nuevo arriba
                 
@@ -156,7 +174,7 @@
                 renderizarSiguienteLote();
             } catch (error) {
                 console.error(error);
-                document.getElementById('loader').innerHTML = 'Error al cargar el catálogo. Recarga la página.';
+                document.getElementById('loader').innerHTML = 'Error al cargar el catálogo. Por favor, recarga la página.';
             }
         }
 
@@ -168,7 +186,7 @@
             if (itemsRenderizados === 0) {
                 container.innerHTML = ''; 
                 if (productosFiltrados.length === 0) {
-                    container.innerHTML = '<p style="text-align:center; grid-column:1/-1; padding:20px; color:#666;">No se encontraron productos en el catálogo.</p>';
+                    container.innerHTML = '<p style="text-align:center; grid-column:1/-1; padding:20px; color:#666; font-size:1.1rem;">No se encontraron productos.</p>';
                     return;
                 }
             }
@@ -178,12 +196,12 @@
             lote.forEach((prod, index) => {
                 const idProducto = prod.SKU || `PROD-${index}`;
                 
-                // --- PROTECCIÓN DE IMAGEN Y MARCA DE AGUA ---
+                // Extrae la primera imagen si hay varias separadas por pipe (|)
                 let linkCrudo = prod.IMAGEN ? String(prod.IMAGEN).split('|')[0].trim() : '';
                 let imgUrl = 'https://via.placeholder.com/500x888.png?text=Sin+Imagen';
 
+                // Si es de Cloudinary, le aplica compresión automática y tu MARCA DE AGUA (l_logo)
                 if (linkCrudo.includes('/upload/')) {
-                    // Carga la foto con formato auto, calidad optimizada y la MARCA DE AGUA (l_logo)
                     imgUrl = linkCrudo.replace('/upload/', '/upload/f_auto,q_auto,w_500,l_logo,w_100,g_south_east,x_10,y_10,o_70/');
                 } else if (linkCrudo !== '') {
                     imgUrl = linkCrudo; 
@@ -191,8 +209,8 @@
 
                 const card = document.createElement('div');
                 card.className = 'product-card';
-                // Evitamos que las comillas simples o dobles en los nombres dañen el botón
-                const nombreSeguro = prod.NOMBRE.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                // Filtramos comillas en el nombre para no romper el botón de HTML
+                const nombreSeguro = String(prod.NOMBRE).replace(/'/g, "\\'").replace(/"/g, '&quot;');
 
                 card.innerHTML = `
                     <div class="image-wrapper">
@@ -210,7 +228,7 @@
             itemsRenderizados += lote.length;
         }
 
-        // Scroll Infinito
+        // --- SCROLL INFINITO (Anticolapso de celular) ---
         window.addEventListener('scroll', () => {
             if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 600) {
                 if (itemsRenderizados < productosFiltrados.length) {
@@ -221,7 +239,10 @@
 
         function filtrarProductos() {
             const texto = document.getElementById('searchInput').value.toLowerCase();
-            productosFiltrados = productosGlobales.filter(p => p.NOMBRE.toLowerCase().includes(texto) || (p.SKU && p.SKU.toLowerCase().includes(texto)));
+            productosFiltrados = productosGlobales.filter(p => 
+                String(p.NOMBRE).toLowerCase().includes(texto) || 
+                (p.SKU && String(p.SKU).toLowerCase().includes(texto))
+            );
             
             itemsRenderizados = 0;
             renderizarSiguienteLote();
