@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tecnología & Hogar - Forwarder Venture</title>
+    
+    <link rel="icon" type="image/jpg" href="logo.jpg">
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
@@ -11,7 +14,6 @@
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap');
         body { background-color: #F3F4F6; font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
         
-        /* Colores Forwarder Venture */
         .text-fv-blue { color: #002e5f; }
         .bg-fv-blue { background-color: #002e5f; }
         .text-fv-orange { color: #e85d04; }
@@ -29,7 +31,7 @@
             background-size: cover; background-position: center;
         }
 
-        .variant-btn { border: 2px solid #e2e8f0; padding: 8px 12px; border-radius: 10px; font-size: 11px; font-weight: 800; transition: all 0.2s; cursor: pointer; text-transform: uppercase; }
+        .variant-btn { border: 2px solid #e2e8f0; padding: 6px 10px; border-radius: 8px; font-size: 11px; font-weight: 800; transition: all 0.2s; cursor: pointer; text-transform: uppercase; }
         .variant-btn.active { border-color: #002e5f; background-color: #002e5f; color: white; }
 
         @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
@@ -41,9 +43,7 @@
     <div class="max-w-[1400px] mx-auto bg-white min-h-screen flex flex-col shadow-sm w-full relative">
         
         <header class="px-6 py-4 sticky top-0 z-50 bg-white/95 backdrop-blur-md flex justify-between items-center border-b border-gray-100 h-[80px]">
-            <div class="flex items-center">
-                <img src="logo.jpg" alt="Forwarder Venture" class="w-[120px] object-contain">
-            </div>
+            <img src="logo.jpg" alt="Forwarder Venture" class="w-[120px] object-contain">
             <button onclick="toggleCart()" class="relative p-2 hover:bg-gray-100 rounded-full transition">
                 <i class="fa-solid fa-cart-shopping text-2xl text-fv-blue"></i>
                 <span id="cart-count" class="absolute top-0 right-0 bg-orange-600 text-white text-[10px] font-bold h-5 w-5 flex items-center justify-center rounded-full border-2 border-white">0</span>
@@ -54,16 +54,30 @@
             <div class="relative z-10 max-w-3xl text-white">
                 <span class="bg-orange-600 text-white px-3 py-1 font-black text-xs uppercase tracking-widest mb-4 inline-block rounded-sm">Catálogo Oficial</span>
                 <h1 class="text-5xl md:text-7xl font-black leading-none mb-4 uppercase drop-shadow-md">Tecnología <br><span class="text-fv-orange">& Hogar</span></h1>
-                <p class="text-gray-100 text-sm md:text-lg font-medium max-w-xl drop-shadow">Precios especiales y soluciones inteligentes para tu día a día.</p>
+                <p class="text-gray-100 text-sm md:text-lg font-medium max-w-xl drop-shadow">Soluciones inteligentes bajo la calidad de Forwarder Venture.</p>
             </div>
         </section>
 
         <div class="p-6 border-b border-gray-200 sticky top-[80px] bg-white z-40 shadow-sm">
-            <div class="flex flex-col md:flex-row gap-6 justify-between items-center">
+            <div class="flex flex-col md:flex-row gap-4 justify-between items-center">
                 <nav id="category-nav" class="flex gap-2 overflow-x-auto w-full md:w-auto hide-scrollbar pb-1"></nav>
-                <div class="relative w-full md:w-96">
-                    <i class="fa-solid fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
-                    <input type="text" id="search-input" oninput="applyFilters()" placeholder="Buscar en inventario..." class="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-fv-blue/10">
+                
+                <div class="flex flex-col sm:flex-row gap-3 w-full md:w-auto items-center">
+                    <div class="relative w-full sm:w-48">
+                        <select id="sort-select" onchange="applyFilters()" class="w-full pl-3 pr-10 py-3 bg-gray-50 border border-gray-300 rounded-xl text-xs font-bold text-gray-700 outline-none focus:ring-2 focus:ring-fv-blue/10 appearance-none cursor-pointer uppercase">
+                            <option value="recent">Más Recientes</option>
+                            <option value="asc">Precio: Bajo a Alto</option>
+                            <option value="desc">Precio: Alto a Bajo</option>
+                            <option value="az">Nombre: A - Z</option>
+                            <option value="za">Nombre: Z - A</option>
+                        </select>
+                        <i class="fa-solid fa-chevron-down absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none text-[10px]"></i>
+                    </div>
+
+                    <div class="relative w-full md:w-72">
+                        <i class="fa-solid fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                        <input type="text" id="search-input" oninput="applyFilters()" placeholder="Buscar..." class="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-300 rounded-xl text-xs outline-none focus:ring-2 focus:ring-fv-blue/10">
+                    </div>
                 </div>
             </div>
         </div>
@@ -74,53 +88,34 @@
 
         <footer class="bg-gray-900 text-white py-14 px-6 border-t-4 border-orange-600 mt-auto text-center">
             <h2 class="text-2xl font-black mb-2 tracking-tighter uppercase">FORWARDER VENTURE</h2>
-            <p class="text-gray-400 text-xs mb-8 tracking-widest uppercase italic">Tecnología & Hogar Inteligente</p>
-            
             <div class="flex justify-center gap-6 mb-8">
-                <a href="https://wa.me/573183035997" target="_blank" class="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center hover:scale-110 transition shadow-lg shadow-green-900/20">
-                    <i class="fa-brands fa-whatsapp text-2xl"></i>
-                </a>
+                <a href="https://wa.me/573183035997" target="_blank" class="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center hover:scale-110 transition"><i class="fa-brands fa-whatsapp text-2xl"></i></a>
             </div>
-
-            <div class="w-24 h-0.5 bg-gray-800 mx-auto mb-6"></div>
-            <p class="text-orange-500 font-bold text-xs uppercase tracking-widest mb-4">
-                * Todos los precios mostrados son ANTES DE IVA
-            </p>
-            <p class="text-gray-500 text-[10px] uppercase tracking-widest">
-                © 2026 Forwarder Venture. Todos los derechos reservados.
-            </p>
+            <p class="text-orange-500 font-bold text-xs uppercase tracking-widest mb-4">* TODOS LOS PRECIOS SON ANTES DE IVA</p>
+            <p class="text-gray-500 text-[10px] uppercase tracking-widest">© 2026 Forwarder Venture. Todos los derechos reservados.</p>
         </footer>
     </div>
 
     <div id="product-modal" class="hidden fixed inset-0 bg-black/80 z-[100] flex items-center justify-center p-4 backdrop-blur-md">
         <div class="bg-white w-full max-w-xl rounded-3xl overflow-hidden relative shadow-2xl animate-slide-up">
-            <button onclick="closeModal()" class="absolute top-4 right-4 w-10 h-10 bg-black/5 hover:bg-black/10 rounded-full flex items-center justify-center z-10 transition text-gray-800"><i class="fa-solid fa-xmark text-xl"></i></button>
-            <div class="h-64 bg-gray-50 flex items-center justify-center p-6 border-b border-gray-100">
-                <img id="modal-img" src="" class="max-h-full max-w-full object-contain">
-            </div>
+            <button onclick="closeModal()" class="absolute top-4 right-4 w-10 h-10 bg-black/5 rounded-full flex items-center justify-center transition text-gray-800"><i class="fa-solid fa-xmark text-xl"></i></button>
+            <div class="h-64 bg-gray-50 flex items-center justify-center p-6"><img id="modal-img" src="" class="max-h-full max-w-full object-contain"></div>
             <div class="p-8">
-                <span id="modal-type" class="text-orange-600 font-black text-xs uppercase tracking-widest">CATEGORÍA</span>
-                <h2 id="modal-title" class="text-2xl font-black text-gray-900 mt-2 mb-4 leading-tight"></h2>
-                
+                <span id="modal-type" class="text-orange-600 font-black text-[10px] uppercase tracking-widest"></span>
+                <h2 id="modal-title" class="text-2xl font-black text-gray-900 mt-2 mb-4 leading-tight uppercase"></h2>
                 <div id="variant-section" class="mb-6 hidden">
-                    <label class="text-[10px] font-black text-gray-400 uppercase mb-2 block">Opciones:</label>
+                    <label class="text-[10px] font-black text-gray-400 uppercase mb-2 block">Selecciona opción:</label>
                     <div id="variant-container" class="flex flex-wrap gap-2"></div>
                 </div>
-
                 <div class="flex items-center justify-between mb-8 bg-gray-50 p-5 rounded-2xl border border-gray-100">
                     <div>
                         <span class="text-gray-400 text-[10px] font-black uppercase block leading-none mb-1">Inversión (Sin IVA)</span>
                         <span id="modal-price" class="text-3xl font-black text-fv-blue"></span>
                     </div>
                 </div>
-
                 <div class="grid grid-cols-2 gap-3">
-                    <button onclick="shareSingleProduct()" class="bg-green-500 text-white rounded-2xl py-4 font-black flex items-center justify-center gap-2 hover:bg-green-600 transition shadow-md">
-                        <i class="fa-brands fa-whatsapp text-xl"></i> COMPARTIR
-                    </button>
-                    <button onclick="addToCartFromModal()" class="bg-fv-blue text-white rounded-2xl py-4 font-black flex items-center justify-center gap-2 hover:opacity-90 transition shadow-md uppercase">
-                        <i class="fa-solid fa-cart-plus"></i> AÑADIR
-                    </button>
+                    <button onclick="shareSingleProduct()" class="bg-green-500 text-white rounded-2xl py-4 font-black flex items-center justify-center gap-2 hover:bg-green-600 transition uppercase"><i class="fa-brands fa-whatsapp text-xl"></i> Compartir</button>
+                    <button onclick="addToCartFromModal()" class="bg-fv-blue text-white rounded-2xl py-4 font-black flex items-center justify-center gap-2 hover:opacity-90 transition uppercase"><i class="fa-solid fa-cart-plus"></i> Añadir</button>
                 </div>
             </div>
         </div>
@@ -128,31 +123,30 @@
 
     <div id="cart-modal" class="hidden fixed inset-0 bg-black/60 z-[200] flex justify-end">
         <div class="bg-white w-full max-w-md h-full flex flex-col">
-            <div class="p-6 border-b flex justify-between items-center bg-white">
+            <div class="p-6 border-b flex justify-between items-center">
                 <h2 class="text-2xl font-black text-fv-blue">TU PEDIDO</h2>
                 <button onclick="toggleCart()" class="text-gray-400 hover:text-gray-600"><i class="fa-solid fa-xmark text-xl"></i></button>
             </div>
             <div id="cart-items" class="flex-grow overflow-y-auto p-6 space-y-4 bg-gray-50"></div>
-            <div class="p-6 border-t bg-white">
+            <div class="p-6 border-t bg-white text-center">
                 <div class="flex justify-between items-center mb-6">
-                    <span class="font-black text-gray-400 text-xs uppercase">Total Estimado:</span>
+                    <span class="font-black text-gray-400 text-xs uppercase">Total (S/IVA):</span>
                     <span id="cart-total" class="text-3xl font-black text-fv-blue">$0</span>
                 </div>
-                <button onclick="sendOrderWhatsApp()" class="w-full bg-[#25D366] text-white py-4 rounded-2xl font-black text-lg flex items-center justify-center gap-3 shadow-lg">
+                <button onclick="sendOrderWhatsApp()" class="w-full bg-[#25D366] text-white py-4 rounded-2xl font-black text-lg flex items-center justify-center gap-3">
                     <i class="fa-brands fa-whatsapp text-2xl"></i> ENVIAR PEDIDO
                 </button>
-                <p class="text-[9px] text-orange-600 font-bold text-center mt-4 uppercase">* Precios no incluyen IVA</p>
             </div>
         </div>
     </div>
 
     <script>
-        const WHATSAPP_NUMBER = '3183035997'; // Teléfono Forwarder Venture
+        const WHATSAPP_NUMBER = '3183035997'; // Jean Peña
         const SHEET_ID = '17a0Pxq1EOLRf86yiuM014ZluVqL2Qj1Mt8cKRDenjHc';
-        const GID = '0'; // GID Tecnología y Hogar
+        const GID = '0'; 
         const CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${GID}`;
 
-        let allProductGroups = [];
+        let allGroups = [];
         let cart = [];
         let currentCategory = 'Ver Todo';
         let selectedGroup = null;
@@ -167,7 +161,7 @@
                 download: true, header: true, skipEmptyLines: true,
                 complete: function(results) {
                     const tempGroups = {};
-                    results.data.forEach(row => {
+                    results.data.forEach((row, index) => {
                         const sku = row['SKU']?.trim();
                         const pSku = row['PARENT SKU']?.trim() || sku;
                         if (!sku) return;
@@ -177,6 +171,7 @@
                                 id: pSku,
                                 nombre: row['NOMBRE'],
                                 tipo: row['TIPO'] || 'Varios',
+                                index: index, // Para orden por "Más Reciente"
                                 variaciones: []
                             };
                         }
@@ -189,7 +184,7 @@
                         });
                     });
 
-                    allProductGroups = Object.values(tempGroups);
+                    allGroups = Object.values(tempGroups);
                     updateCategoryNav();
                     applyFilters();
                     checkUrlForProduct(); 
@@ -198,7 +193,7 @@
         }
 
         function updateCategoryNav() {
-            const types = ['Ver Todo', ...new Set(allProductGroups.map(p => p.tipo))].sort();
+            const types = ['Ver Todo', ...new Set(allGroups.map(p => p.tipo))].sort();
             document.getElementById('category-nav').innerHTML = types.map(t => `
                 <button onclick="filterType('${t}')" class="px-5 py-2 rounded-xl text-xs font-black whitespace-nowrap border transition-all ${t === currentCategory ? 'bg-fv-blue text-white shadow-md' : 'bg-white text-gray-500 hover:bg-gray-100'}">${t}</button>
             `).join('');
@@ -208,11 +203,21 @@
 
         function applyFilters() {
             const search = document.getElementById('search-input').value.toLowerCase();
-            const filtered = allProductGroups.filter(p => {
+            const sortMode = document.getElementById('sort-select').value;
+
+            let filtered = allGroups.filter(p => {
                 const matchType = currentCategory === 'Ver Todo' || p.tipo === currentCategory;
                 const matchSearch = p.nombre.toLowerCase().includes(search);
                 return matchType && matchSearch;
             });
+
+            // Lógica de Ordenamiento solicitada
+            if (sortMode === 'asc') filtered.sort((a, b) => a.variaciones[0].precio - b.variaciones[0].precio);
+            else if (sortMode === 'desc') filtered.sort((a, b) => b.variaciones[0].precio - a.variaciones[0].precio);
+            else if (sortMode === 'az') filtered.sort((a, b) => a.nombre.localeCompare(b.nombre));
+            else if (sortMode === 'za') filtered.sort((a, b) => b.nombre.localeCompare(a.nombre));
+            else if (sortMode === 'recent') filtered.sort((a, b) => b.index - a.index);
+
             renderGrid(filtered);
         }
 
@@ -222,14 +227,14 @@
                 const main = p.variaciones[0];
                 return `
                 <div class="bg-white rounded-2xl overflow-hidden card-shadow flex flex-col cursor-pointer relative group">
-                    <div onclick="openModal('${p.id}')" class="aspect-square p-4 bg-white overflow-hidden flex items-center justify-center border-b border-gray-50">
+                    <div onclick="openModal('${p.id}')" class="aspect-square p-4 bg-white border-b border-gray-50 flex items-center justify-center">
                         <img src="${main.img}" class="max-h-full max-w-full object-contain group-hover:scale-110 transition duration-500">
                         <div class="absolute top-3 left-3 bg-white/90 backdrop-blur px-2 py-1 rounded-md text-[9px] font-black uppercase text-fv-blue shadow-sm border border-gray-100">${p.tipo}</div>
                     </div>
                     <div class="p-4 flex flex-col flex-grow">
-                        <h3 onclick="openModal('${p.id}')" class="font-black text-xs text-gray-800 leading-tight mb-3 h-8 line-clamp-2 uppercase">${p.nombre}</h3>
+                        <h3 onclick="openModal('${p.id}')" class="font-black text-[11px] text-gray-800 leading-tight mb-3 h-8 line-clamp-2 uppercase">${p.nombre}</h3>
                         <div class="mt-auto flex justify-between items-center">
-                            <p class="text-sm font-black text-fv-blue">${formatMoney(main.precio)}</p>
+                            <p class="text-[13px] font-black text-fv-blue">${formatMoney(main.precio)}</p>
                             <div class="flex gap-1">
                                 <button onclick="quickShare('${p.id}')" class="w-8 h-8 bg-green-50 text-green-600 rounded-lg flex items-center justify-center hover:bg-green-100 transition shadow-sm"><i class="fa-brands fa-whatsapp text-sm"></i></button>
                                 <button onclick="quickAdd('${p.id}')" class="w-8 h-8 bg-gray-900 text-white rounded-lg flex items-center justify-center hover:bg-fv-blue transition shadow-md"><i class="fa-solid fa-plus text-xs"></i></button>
@@ -241,7 +246,7 @@
         }
 
         function openModal(groupId) {
-            selectedGroup = allProductGroups.find(p => p.id === groupId);
+            selectedGroup = allGroups.find(p => p.id === groupId);
             if(!selectedGroup) return;
             selectedVariant = selectedGroup.variaciones[0];
             updateModalUI();
@@ -261,9 +266,7 @@
                 document.getElementById('variant-container').innerHTML = selectedGroup.variaciones.map((v, i) => `
                     <button onclick="selectVariant(${i})" class="variant-btn ${v === selectedVariant ? 'active' : ''}">${v.variable || 'Opc ' + (i+1)}</button>
                 `).join('');
-            } else {
-                vSection.classList.add('hidden');
-            }
+            } else vSection.classList.add('hidden');
         }
 
         function selectVariant(i) {
@@ -277,7 +280,7 @@
         }
 
         function quickAdd(groupId) {
-            const g = allProductGroups.find(p => p.id === groupId);
+            const g = allGroups.find(p => p.id === groupId);
             const v = g.variaciones[0];
             if(!cart.find(c => c.sku === v.sku)) cart.push({ ...v, nombre: g.nombre });
             updateCartUI();
@@ -292,9 +295,9 @@
         }
 
         function quickShare(groupId) {
-            const g = allProductGroups.find(p => p.id === groupId);
+            const g = allGroups.find(p => p.id === groupId);
             const url = `${window.location.origin}${window.location.pathname}?p=${groupId}`;
-            const text = `🛒 ¡Mira este producto en Forwarder Venture!\n\n*${g.nombre}*\n\nInfo: ${url}`;
+            const text = `🛒 *FORWARDER VENTURE*\n\nMira este producto:\n*${g.nombre}*\n\nLink: ${url}`;
             window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
         }
 
@@ -317,7 +320,7 @@
                         <img src="${item.img}" class="w-16 h-16 object-contain rounded-xl bg-gray-50">
                         <div class="flex-grow">
                             <p class="font-black text-[10px] text-fv-blue uppercase line-clamp-1">${item.nombre}</p>
-                            <p class="text-[9px] text-gray-400 font-bold">${item.variable}</p>
+                            <p class="text-[9px] text-gray-400 font-bold uppercase">${item.variable}</p>
                             <p class="font-black text-sm mt-1">${formatMoney(item.precio)}</p>
                         </div>
                         <button onclick="removeFromCart(${i})" class="text-red-400 px-2"><i class="fa-solid fa-trash-can"></i></button>
@@ -331,10 +334,10 @@
 
         function sendOrderWhatsApp() {
             if(cart.length === 0) return;
-            let msg = `🛒 *PEDIDO - FORWARDER VENTURE*%0A%0A`;
+            let msg = `🛒 *PEDIDO - FORWARDER VENTURE*%0A%0AHola, deseo cotizar los siguientes productos:%0A%0A`;
             cart.forEach(item => msg += `• *${item.nombre}* - ${item.variable} (${formatMoney(item.precio)})%0A`);
             const total = cart.reduce((acc, i) => acc + i.precio, 0);
-            msg += `%0A*TOTAL ESTIMADO: ${formatMoney(total)}*%0A%0A_Precios antes de IVA. Favor confirmar disponibilidad._`;
+            msg += `%0A*TOTAL ESTIMADO (S/IVA): ${formatMoney(total)}*%0A%0A_Favor confirmar disponibilidad._`;
             window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${msg}`, '_blank');
         }
 
