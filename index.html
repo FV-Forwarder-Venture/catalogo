@@ -33,7 +33,6 @@
         @keyframes slideUp { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         .animate-slide-up { animation: slideUp 0.3s ease-out forwards; }
         
-        /* Loader del Infinite Scroll */
         .loader { border: 4px solid #f3f3f3; border-radius: 50%; border-top: 4px solid #002e5f; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: 20px auto; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
@@ -125,7 +124,7 @@
                 </div>
 
                 <div id="extra-section" class="mb-6 hidden">
-                    <label class="text-[10px] font-black text-gray-400 uppercase mb-2 block">Detalles/Colores:</label>
+                    <label class="text-[10px] font-black text-gray-400 uppercase mb-2 block">Detalles Adicionales:</label>
                     <div id="extra-container" class="flex flex-wrap gap-2"></div>
                 </div>
 
@@ -168,9 +167,9 @@
     </div>
 
     <script>
-        const WHATSAPP_NUMBER = '3183035997'; // Teléfono Tecnología y Hogar
+        const WHATSAPP_NUMBER = '3183035997'; 
         const SHEET_ID = '17a0Pxq1EOLRf86yiuM014ZluVqL2Qj1Mt8cKRDenjHc';
-        const GID = '0'; // Pestaña Tecnología
+        const GID = '0'; 
         const CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${GID}`;
 
         let allGroups = [];
@@ -192,17 +191,15 @@
             return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(amount);
         }
 
-        // LIMPIADOR AVANZADO PARA TEXTOS Y VARIABLES (Evita duplicados falsos)
         function superClean(text) {
             if (!text) return '';
             return text.toString()
-                .replace(/[\u200B-\u200D\uFEFF]/g, '') // Elimina espacios invisibles 
-                .replace(/\s+/g, ' ') // Elimina saltos de línea y espacios dobles
+                .replace(/[\u200B-\u200D\uFEFF]/g, '') 
+                .replace(/\s+/g, ' ') 
                 .trim()
                 .toUpperCase();
         }
 
-        // DESTRUCTOR DE TILDES PARA EL BUSCADOR
         function removeAccentsAndLower(text) {
             if (!text) return '';
             return text.toString()
@@ -218,18 +215,16 @@
                     
                     results.data.forEach((row, index) => {
                         const sku = row['SKU']?.toString().trim();
-                        
-                        // EVITAR EL "PRODUCTO GIGANTE": Si no hay Parent SKU ni SKU, le asignamos un ID único por fila
                         let pSku = row['PARENT SKU']?.toString().trim();
                         if(!pSku) pSku = sku || `FILA-SIN-SKU-${index}`;
                         
-                        // Si la fila está completamente vacía de nombre y sku, saltarla
                         if (!row['NOMBRE'] && !sku) return;
 
                         let pStr = row['PRECIO DE VENTA']?.toString() || '0';
                         pStr = pStr.replace(/[,.]\d{1,2}$/, ''); 
                         const precioVenta = parseInt(pStr.replace(/\D/g, '')) || 0;
 
+                        // Obtenemos imágenes de esta fila en específico
                         const rawImgs = row['IMAGEN']?.split('|').map(i => i.trim()).filter(i => i !== "") || [];
                         const imgs = rawImgs.length > 0 ? rawImgs : ['https://via.placeholder.com/400'];
 
@@ -246,8 +241,8 @@
                         const safeVariable = superClean(row['VARIABLE']);
                         const safeExtra = superClean(row['EXTRA']);
 
-                        // Garantía de Margen: Guardar si es nuevo, o sobreescribir si el precio de venta es MAYOR
-                        if (!tempGroups[pSku].skuMap[sku] || precioVenta > tempGroups[pSku].skuMap[sku].precio) {
+                        if (!tempGroups[pSku].skuMap[sku]) {
+                            // Primera vez que vemos este SKU
                             tempGroups[pSku].skuMap[sku] = {
                                 sku: sku,
                                 variable: safeVariable,
@@ -255,6 +250,23 @@
                                 imgs: imgs,
                                 precio: precioVenta
                             };
+                        } else {
+                            // Si el SKU ya existe, hacemos un MIX de imágenes
+                            let currentImgs = tempGroups[pSku].skuMap[sku].imgs;
+                            let combinedImgs = [...currentImgs, ...rawImgs];
+                            
+                            // Si llegaron imágenes reales, quitamos la imagen de relleno (placeholder)
+                            if (rawImgs.length > 0) {
+                                combinedImgs = combinedImgs.filter(i => i !== 'https://via.placeholder.com/400');
+                            }
+                            
+                            // Borrar imágenes duplicadas usando Set
+                            tempGroups[pSku].skuMap[sku].imgs = [...new Set(combinedImgs)];
+
+                            // Proteger margen (Guardar precio más alto)
+                            if (precioVenta > tempGroups[pSku].skuMap[sku].precio) {
+                                tempGroups[pSku].skuMap[sku].precio = precioVenta;
+                            }
                         }
                     });
 
@@ -267,7 +279,6 @@
                     applyFilters();
                     checkUrlForProduct();
 
-                    // Activar el sensor de scroll infinito
                     window.addEventListener('scroll', handleScroll);
                 }
             });
@@ -296,21 +307,18 @@
             filteredGroups = allGroups.filter(p => {
                 const matchType = currentCategory === 'Ver Todo' || p.tipo === currentCategory;
                 
-                // Buscar coincidencia ignorando tildes y mayúsculas
                 const searchText = removeAccentsAndLower(p.nombre + " " + p.tipo + " " + p.variaciones.map(v => v.variable + " " + v.extra).join(" "));
                 const matchSearch = searchTerms.every(term => searchText.includes(term));
                 
                 return matchType && matchSearch;
             });
 
-            // Ordenamiento
             if (sortMode === 'asc') filteredGroups.sort((a, b) => a.variaciones[0].precio - b.variaciones[0].precio);
             else if (sortMode === 'desc') filteredGroups.sort((a, b) => b.variaciones[0].precio - a.variaciones[0].precio);
             else if (sortMode === 'az') filteredGroups.sort((a, b) => a.nombre.localeCompare(b.nombre));
             else if (sortMode === 'za') filteredGroups.sort((a, b) => b.nombre.localeCompare(a.nombre));
             else if (sortMode === 'recent') filteredGroups.sort((a, b) => b.index - a.index);
 
-            // Reiniciar scroll infinito
             currentStartIndex = 0;
             document.getElementById('product-grid').innerHTML = ''; 
             loadMoreProducts();
@@ -330,7 +338,6 @@
             const sliceToRender = filteredGroups.slice(currentStartIndex, end);
             
             if (sliceToRender.length > 0) {
-                // IMÁGENES DEL MISMO TAMAÑO: object-cover + aspect-square fuerza cuadrados perfectos
                 const html = sliceToRender.map(p => {
                     const main = p.variaciones[0];
                     return `
@@ -368,7 +375,6 @@
         }
 
         function handleScroll() {
-            // Si el usuario está a 800px del fondo de la página, carga los siguientes 50
             const { scrollTop, scrollHeight, clientHeight } = document.documentElement;
             if (scrollTop + clientHeight >= scrollHeight - 800) {
                 if (currentStartIndex < filteredGroups.length) {
@@ -377,7 +383,6 @@
             }
         }
 
-        // --- LÓGICA DE APERTURA Y FILTROS ANIDADOS ---
         function openModal(groupId) {
             selectedGroup = allGroups.find(p => p.id === groupId);
             if(!selectedGroup) return;
