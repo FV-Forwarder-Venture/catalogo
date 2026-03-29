@@ -41,7 +41,7 @@
 
     <div class="max-w-[1400px] mx-auto bg-white min-h-screen flex flex-col shadow-2xl w-full relative">
         
-        <header class="bg-white/95 backdrop-blur-md px-6 py-4 sticky top-0 z-50 flex justify-between items-center border-b border-gray-100 shadow-sm h-[160px]">
+        <header class="bg-white/95 backdrop-blur-md px-6 py-4 sticky top-0 z-50 flex justify-between items-center border-b border-gray-100 shadow-sm h-[80px]">
             <img src="logo.png" alt="Forwarder Venture" class="w-[120px] object-contain" onerror="this.src='https://via.placeholder.com/140x40?text=FORWARDER'">
             <button onclick="toggleCart()" class="relative p-2 hover:bg-gray-100 rounded-full transition">
                 <i class="fa-solid fa-cart-shopping text-2xl text-fv-blue"></i>
@@ -128,7 +128,7 @@
 
                 <div class="flex items-center justify-between mb-8 bg-gray-50 p-5 rounded-2xl border border-gray-100">
                     <div>
-                        <span class="text-gray-400 text-[10px] font-black uppercase block leading-none mb-1 tracking-tight">Precio Unit. (S/IVA)</span>
+                        <span class="text-gray-400 text-[10px] font-black uppercase block leading-none mb-1 tracking-tight">Precio Unit.</span>
                         <span id="modal-price" class="text-3xl font-black text-fv-blue"></span>
                     </div>
                 </div>
@@ -215,8 +215,12 @@
                         let pStr = (row['PRECIO DE VENTA'] || row['PRECIO 1'] || '0').toString();
                         const precioVenta = parseInt(pStr.replace(/\D/g, '')) || 0;
 
-                        const rawImgs = row['IMAGEN']?.split('|').map(i => i.trim()).filter(i => i.startsWith('http')) || [];
-                        const imgs = rawImgs.length > 0 ? rawImgs : ['https://via.placeholder.com/400?text=Imagen+No+Disponible'];
+                        // Filtro que bloquea conexiones colgadas de Cloudinary
+                        const rawImgs = row['IMAGEN']?.split('|')
+                            .map(i => i.trim())
+                            .filter(i => i.startsWith('http') && !i.includes('cloudinary')) || [];
+                            
+                        const imgs = rawImgs.length > 0 ? rawImgs : ['https://via.placeholder.com/400?text=Cargando...'];
 
                         if (!tempGroups[pSku]) {
                             tempGroups[pSku] = {
