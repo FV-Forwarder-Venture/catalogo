@@ -1,23 +1,25 @@
 name: Sincronizar Catálogos
 on:
   push:
-    branches: [ main ] # Cambia 'main' por 'master' si tu rama principal se llama así
+    branches: [ main ]
     paths:
-      - 'index.html' # El robot solo se despierta si modificas este archivo
+      - 'index.html'
+  workflow_dispatch: # Esto te permite ejecutar el robot manualmente con un botón
 
 jobs:
   sync-files:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false # Si un repo falla (ej. si aún no lo has creado), los demás se seguirán actualizando
       matrix:
-        # AQUÍ PONES LOS NOMBRES DE TUS 4 REPOSITORIOS DESTINO
+        # AQUÍ VA EL FORMATO CORRECTO: Organizacion/Repositorio
         repo:
-          - 'fv-forwarder-venture.github.io/celular'
-          - 'fv-forwarder-venture.github.io/ninos'
-          - 'fv-forwarder-venture.github.io/ropa-de-cama'
-          - 'fv-forwarder-venture.github.io/sublimacion'
-          - 'fv-forwarder-venture.github.io/papeleria-creativa'
-          - 'fv-forwarder-venture.github.io/maquillaje'
+          - 'fv-forwarder-venture/celular'
+          - 'fv-forwarder-venture/ninos'
+          - 'fv-forwarder-venture/ropa-de-cama'
+          - 'fv-forwarder-venture/sublimacion'
+          - 'fv-forwarder-venture/papeleria-creativa'
+          - 'fv-forwarder-venture/maquillaje'
     steps:
       - name: Descargar repositorio maestro
         uses: actions/checkout@v3
@@ -27,7 +29,7 @@ jobs:
           git config --global user.email "bot@forwarderventure.com"
           git config --global user.name "Bot Sincronizador FV"
 
-          # 1. Clonar el repositorio destino usando la Llave
+          # 1. Clonar el repositorio destino
           git clone https://x-access-token:${{ secrets.SYNC_TOKEN }}@github.com/${{ matrix.repo }}.git destino
 
           # 2. Copiar el index.html del Padre al Hijo
@@ -37,4 +39,4 @@ jobs:
           cd destino
           git add index.html
           git commit -m "🚀 Auto-actualización de código maestro" || echo "Sin cambios"
-          git push origin main # Asegúrate de que la rama de tus repos hijos sea 'main'
+          git push origin main
