@@ -1,0 +1,40 @@
+name: Sincronizar Catálogos
+on:
+  push:
+    branches: [ main ] # Cambia 'main' por 'master' si tu rama principal se llama así
+    paths:
+      - 'index.html' # El robot solo se despierta si modificas este archivo
+
+jobs:
+  sync-files:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        # AQUÍ PONES LOS NOMBRES DE TUS 4 REPOSITORIOS DESTINO
+        repo:
+          - 'fv-forwarder-venture.github.io/celular'
+          - 'fv-forwarder-venture.github.io/ninos'
+          - 'fv-forwarder-venture.github.io/ropa-de-cama'
+          - 'fv-forwarder-venture.github.io/sublimacion'
+          - 'fv-forwarder-venture.github.io/papeleria-creativa'
+          - 'fv-forwarder-venture.github.io/maquillaje'
+    steps:
+      - name: Descargar repositorio maestro
+        uses: actions/checkout@v3
+
+      - name: Copiar a repositorio destino
+        run: |
+          git config --global user.email "bot@forwarderventure.com"
+          git config --global user.name "Bot Sincronizador FV"
+
+          # 1. Clonar el repositorio destino usando la Llave
+          git clone https://x-access-token:${{ secrets.SYNC_TOKEN }}@github.com/${{ matrix.repo }}.git destino
+
+          # 2. Copiar el index.html del Padre al Hijo
+          cp index.html destino/index.html
+
+          # 3. Entrar al Hijo, guardar cambios y subirlos
+          cd destino
+          git add index.html
+          git commit -m "🚀 Auto-actualización de código maestro" || echo "Sin cambios"
+          git push origin main # Asegúrate de que la rama de tus repos hijos sea 'main'
